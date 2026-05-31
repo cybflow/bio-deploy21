@@ -35,7 +35,7 @@ SECRET_KEY = os.environ.get(
     'django-insecure-pu(a^l02+_-t*xm5w=pue(!_b#o0tjq8l^n851$v-&%p4^6iy9',
 )
 
-DEBUG = os.environ.get('DEBUG', 'False').strip().lower() in ('true', '1', 'yes')
+DEBUG = os.environ.get('DEBUG', 'True').strip().lower() in ('true', '1', 'yes')
 
 # Allow * in dev; in production set ALLOWED_HOSTS env var to a comma-separated
 # list of real host names, e.g. "example.com,www.example.com"
