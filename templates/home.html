@@ -3,7 +3,7 @@
 {% block title %}{{ site_settings.site_name|default:"CybFlows" }} — Your link, your identity{% endblock %}
 
 {% block nav_actions %}
-<a class="btn btn-ghost" href="{% url 'login' %}">Log in</a>
+<a class="btn btn-ghost" href="{% url 'dashboard' %}">Log in</a>
 <a class="btn btn-primary" href="{% url 'signup' %}">Get started free</a>
 {% endblock %}
 
