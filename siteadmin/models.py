@@ -198,7 +198,7 @@ SITE_THEME_CHOICES = [
 
 
 class SiteSettings(models.Model):
-    site_name       = models.CharField(max_length=80, default='AEiViON')
+    site_name       = models.CharField(max_length=80, default='CybFlows')
     tagline         = models.CharField(max_length=160, blank=True,
                                        default='Your link, your identity.')
     site_theme      = models.CharField(max_length=20, choices=SITE_THEME_CHOICES, default='dark')

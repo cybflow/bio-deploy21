@@ -78,6 +78,10 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'devbio.urls'
 
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.cybflows.com",
+]
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
