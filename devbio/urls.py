@@ -40,7 +40,7 @@ urlpatterns = [
 
     # ── Auth ─────────────────────────────────────────────────────────
     path(
-        'dashboard/',
+        'login/',
         auth_views.LoginView.as_view(template_name='accounts/login.html'),
         name='login',
     ),
