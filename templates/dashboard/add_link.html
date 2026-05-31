@@ -1,0 +1,614 @@
+{% extends "base.html" %}
+
+{% block title %}Add Link — AEiViON{% endblock %}
+
+{% block menu_add %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+
+/* ============================================================
+   ADD LINK PAGE
+   ============================================================ */
+
+.add-link-page {
+  padding-block: clamp(28px, 5vw, 48px);
+}
+
+/* ── Two-column layout ── */
+.add-link-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: clamp(14px, 2.5vw, 22px);
+  align-items: start;
+}
+
+@media (max-width: 800px) {
+  .add-link-grid {
+    grid-template-columns: 1fr;
+  }
+  .add-link-preview-col {
+    order: -1;
+  }
+}
+
+/* ── Page eyebrow heading ── */
+.add-link-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.add-link-eyebrow::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 8px rgba(255,77,0,.6);
+  flex-shrink: 0;
+}
+
+/* ── Field wrapper ── */
+.field {
+  margin-bottom: 18px;
+}
+
+.field:last-of-type {
+  margin-bottom: 0;
+}
+
+.field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,.65);
+  margin-bottom: 7px;
+}
+
+.field label svg {
+  width: 13px; height: 13px;
+  stroke: var(--muted); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* Remove default bottom margin on Django-rendered inputs */
+.field input,
+.field textarea,
+.field select {
+  margin-bottom: 0;
+}
+
+.field-hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+/* ── URL input with https:// prefix ── */
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.input-with-prefix:focus-within {
+  border-color: rgba(255,77,0,.4);
+  box-shadow: 0 0 0 3px rgba(255,77,0,.08);
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(255,255,255,.035);
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.input-with-prefix input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  min-width: 0;
+}
+
+/* ── Icon selector grid ── */
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.icon-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background .18s, border-color .18s, transform .18s;
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 500;
+  letter-spacing: .02em;
+  user-select: none;
+  position: relative;
+}
+
+.icon-option svg {
+  width: 18px; height: 18px;
+  stroke: var(--muted); fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke .18s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .icon-option:hover {
+    background: var(--surface-hi);
+    border-color: var(--border-hi);
+    transform: translateY(-1px);
+  }
+
+  .icon-option:hover svg { stroke: rgba(255,255,255,.7); }
+}
+
+.icon-option.selected {
+  background: var(--orange-lo);
+  border-color: rgba(255,77,0,.4);
+  color: #ff7040;
+}
+
+.icon-option.selected svg { stroke: #ff7040; }
+
+/* Hide the actual Django form field for icon */
+#id_icon { display: none; }
+
+/* ── Form footer ── */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.form-footer-note {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.form-footer-note svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.form-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Preview column ── */
+.preview-sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 16px);
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-bottom: 14px;
+}
+
+/* Live preview card — mirrors a public link card */
+.preview-link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,.055);
+  border: 1px solid var(--border-hi);
+  position: relative;
+  overflow: hidden;
+  min-height: 62px;
+  transition: background .2s;
+}
+
+/* Animated left pip */
+.preview-link-card::after {
+  content: "";
+  position: absolute;
+  left: 0; top: 15%; bottom: 15%;
+  width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--orange), var(--blue));
+  opacity: 1;
+}
+
+.preview-link-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--orange-lo);
+  border: 1px solid rgba(255,77,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: background .2s;
+}
+
+.preview-link-icon svg {
+  width: 16px; height: 16px;
+  stroke: rgba(255,100,30,.8); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  transition: stroke .2s;
+}
+
+.preview-link-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-link-title {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+  transition: opacity .2s;
+}
+
+.preview-link-url {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.preview-link-chevron {
+  width: 15px; height: 15px;
+  stroke: rgba(255,255,255,.25); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* Empty state inside preview */
+.preview-empty {
+  text-align: center;
+  padding: 24px 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.preview-empty svg {
+  width: 28px; height: 28px;
+  stroke: rgba(255,255,255,.15); fill: none; stroke-width: 1.5;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+/* ── Tips list inside preview card ── */
+.tips-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.tips-list li::before {
+  content: "";
+  width: 14px; height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  border-radius: 50%;
+  background:
+    rgba(255,77,0,.1)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23ff4d00' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E")
+    no-repeat center / 8px;
+  border: 1px solid rgba(255,77,0,.2);
+}
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="add-link-page container">
+
+  <!-- Page heading -->
+  <div class="fade" style="margin-bottom: clamp(20px,3vw,32px);">
+    <p class="add-link-eyebrow">Links</p>
+    <h1 style="font-size:clamp(20px,4vw,30px);font-weight:700;letter-spacing:-.4px;">
+      Add a Link
+    </h1>
+  </div>
+
+  <div class="add-link-grid">
+
+    <!-- ── Form column ── -->
+    <div>
+      <div class="glass fade delay-1">
+
+        <form method="POST" id="add-link-form" novalidate>
+          {% csrf_token %}
+
+          <!-- Title -->
+          <div class="field">
+            <label for="{{ form.title.id_for_label }}">
+              <svg viewBox="0 0 24 24">
+                <path d="M4 7h16M4 12h10M4 17h6"/>
+              </svg>
+              Title
+            </label>
+            {{ form.title }}
+            <p class="field-hint">Give your link a clear, short label visitors will recognise.</p>
+          </div>
+
+          <!-- URL -->
+          <div class="field">
+            <label for="{{ form.url.id_for_label }}">
+              <svg viewBox="0 0 24 24">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              URL
+            </label>
+            {{ form.url }}
+            <p class="field-hint">Must begin with <code style="font-size:11px;color:rgba(255,255,255,.5);">https://</code></p>
+          </div>
+
+          <!-- Icon picker -->
+          <div class="field">
+            <label>
+              <svg viewBox="0 0 24 24">
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              Icon
+            </label>
+
+            <!-- Hidden Django field -->
+            {{ form.icon }}
+
+            <div class="icon-grid" id="icon-grid" role="radiogroup" aria-label="Icon selector">
+
+              <button type="button" class="icon-option" data-value="link" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Link
+              </button>
+
+              <button type="button" class="icon-option" data-value="github" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                GitHub
+              </button>
+
+              <button type="button" class="icon-option" data-value="twitter" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                Twitter
+              </button>
+
+              <button type="button" class="icon-option" data-value="youtube" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+                YouTube
+              </button>
+
+              <button type="button" class="icon-option" data-value="instagram" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                Instagram
+              </button>
+
+              <button type="button" class="icon-option" data-value="linkedin" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+                LinkedIn
+              </button>
+
+              <button type="button" class="icon-option" data-value="globe" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Website
+              </button>
+
+              <button type="button" class="icon-option" data-value="mail" aria-checked="false" role="radio">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Email
+              </button>
+
+            </div>
+          </div>
+
+          <!-- Form footer -->
+          <div class="form-footer">
+            <p class="form-footer-note">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Appears on your public page immediately.
+            </p>
+            <div class="form-footer-actions">
+              <a class="btn btn-ghost" href="/dashboard/">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Link
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ── Preview column ── -->
+    <div class="add-link-preview-col">
+      <div class="preview-sticky">
+        <div class="glass fade delay-2">
+
+          <p class="preview-label">Live Preview</p>
+
+          <!-- Link card preview -->
+          <div id="preview-card" class="preview-link-card">
+
+            <div class="preview-link-icon" id="preview-icon">
+              <svg id="preview-icon-svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+
+            <div class="preview-link-text">
+              <p class="preview-link-title" id="preview-title" style="opacity:.35;">Link title</p>
+              <p class="preview-link-url"   id="preview-url">Your URL will appear here</p>
+            </div>
+
+            <svg class="preview-link-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+
+          </div>
+
+          <!-- Tips -->
+          <ul class="tips-list">
+            <li>Keep titles short — under 30 characters looks best.</li>
+            <li>Use full URLs including <code style="font-size:10px;">https://</code></li>
+            <li>Pick an icon that matches the destination platform.</li>
+          </ul>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function () {
+
+  /* ── Icon SVG paths for live preview ── */
+  const iconSVGs = {
+    link:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    github:    '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
+    twitter:   '<path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/>',
+    youtube:   '<path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.96-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/>',
+    instagram: '<rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>',
+    linkedin:  '<path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/>',
+    globe:     '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+    mail:      '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>',
+  };
+
+  const titleInput  = document.getElementById('{{ form.title.id_for_label }}');
+  const urlInput    = document.getElementById('{{ form.url.id_for_label }}');
+  const iconInput   = document.getElementById('id_icon');
+  const previewTitle = document.getElementById('preview-title');
+  const previewUrl   = document.getElementById('preview-url');
+  const previewIconSvg = document.getElementById('preview-icon-svg');
+
+  /* ── Live title preview ── */
+  if (titleInput) {
+    titleInput.addEventListener('input', function () {
+      const val = this.value.trim();
+      previewTitle.textContent = val || 'Link title';
+      previewTitle.style.opacity = val ? '1' : '.35';
+    });
+  }
+
+  /* ── Live URL preview ── */
+  if (urlInput) {
+    urlInput.addEventListener('input', function () {
+      const val = this.value.trim();
+      previewUrl.textContent = val || 'Your URL will appear here';
+    });
+  }
+
+  /* ── Icon picker ── */
+  const iconButtons = document.querySelectorAll('#icon-grid .icon-option');
+
+  iconButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+      const value = this.dataset.value;
+
+      /* Deselect all */
+      iconButtons.forEach(b => {
+        b.classList.remove('selected');
+        b.setAttribute('aria-checked', 'false');
+      });
+
+      /* Select clicked */
+      this.classList.add('selected');
+      this.setAttribute('aria-checked', 'true');
+
+      /* Update hidden Django input */
+      if (iconInput) iconInput.value = value;
+
+      /* Update preview SVG */
+      if (previewIconSvg && iconSVGs[value]) {
+        previewIconSvg.innerHTML = iconSVGs[value];
+      }
+    });
+  });
+
+  /* Pre-select 'link' on load */
+  const defaultBtn = document.querySelector('[data-value="link"]');
+  if (defaultBtn) {
+    defaultBtn.classList.add('selected');
+    defaultBtn.setAttribute('aria-checked', 'true');
+    if (iconInput) iconInput.value = 'link';
+  }
+
+})();
+</script>
+{% endblock %}

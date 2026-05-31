@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Registration Closed — {{ site.site_name }}{% endblock %}
+{% block nav_actions %}
+<a class="btn btn-ghost" href="{% url 'login' %}">Log in</a>
+{% endblock %}
+{% block bottom_menu %}{% endblock %}
+{% block content %}
+<div style="min-height:calc(100dvh - 60px);display:flex;align-items:center;justify-content:center;padding:40px 20px;">
+  <div class="glass fade" style="max-width:420px;width:100%;text-align:center;padding:40px 32px;">
+    <div style="width:52px;height:52px;border-radius:50%;background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:10px;">Registration Closed</h1>
+    <p style="color:var(--muted);font-size:14px;line-height:1.65;margin-bottom:28px;">
+      New account registration is currently closed.<br>
+      If you already have an account, you can still log in.
+    </p>
+    <a class="btn btn-primary" href="{% url 'login' %}">Log in to your account</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,533 @@
+{% extends "base.html" %}
+
+{% block title %}{{ profile.name|default:profile.username }} — AEiViON{% endblock %}
+
+{# ── Empty all chrome blocks so the page is truly standalone ── #}
+{% block nav_actions %}{% endblock %}
+{% block bottom_menu %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_head %}
+{# Hide the top nav bar and remove all shell offsets — must be in <head> #}
+<style>
+  nav.top-nav   { display: none !important; }
+  nav.bottom-menu { display: none !important; }
+  body {
+    padding-bottom: 0    !important;
+    padding-left:   0    !important;
+  }
+</style>
+
+{# ── Theme CSS — resolved server-side from user's saved preferences ── #}
+{% with t=profile.theme cp=profile.color_primary cb=profile.color_bg ct=profile.color_text %}
+<style>
+/* ================================================================
+   CSS CUSTOM PROPERTIES — injected from user's saved theme settings
+   ================================================================ */
+:root {
+  --p-primary:     {{ cp|default:"#ff4d00" }};
+  --p-bg:          {{ cb|default:"#050505" }};
+  --p-text:        {{ ct|default:"#f0f0f0" }};
+  --p-primary-lo:  color-mix(in srgb, var(--p-primary) 15%, transparent);
+  --p-primary-mid: color-mix(in srgb, var(--p-primary) 35%, transparent);
+  --p-text-muted:  color-mix(in srgb, var(--p-text) 50%, transparent);
+  --p-border:      color-mix(in srgb, var(--p-text) 10%, transparent);
+  --p-surface:     color-mix(in srgb, var(--p-text)  5%, transparent);
+}
+
+body {
+  background: var(--p-bg) !important;
+  color: var(--p-text) !important;
+  min-height: 100dvh;
+}
+
+/* ── Optional background image ── */
+{% if profile.bg_image %}
+.profile-bg-layer {
+  position: fixed; inset: 0; z-index: -3;
+  background: url('{{ profile.bg_image.url }}') center / cover no-repeat;
+}
+.profile-bg-overlay {
+  position: fixed; inset: 0; z-index: -2;
+  background: color-mix(in srgb, var(--p-bg) 72%, transparent);
+  backdrop-filter: blur(2px);
+}
+{% else %}
+.profile-bg-layer,
+.profile-bg-overlay { display: none; }
+{% endif %}
+
+/* ── Shared fade animation ── */
+.fade { opacity: 0; transform: translateY(20px); transition: opacity .6s ease, transform .6s ease; }
+.fade.visible { opacity: 1; transform: none; }
+.delay-1 { transition-delay: .08s; }
+.delay-2 { transition-delay: .16s; }
+.delay-3 { transition-delay: .24s; }
+@media (prefers-reduced-motion: reduce) {
+  .fade { opacity: 1 !important; transform: none !important; }
+}
+
+/* ================================================================
+   THEME: DEFAULT  (dark glass)
+   ================================================================ */
+{% if t == 'default' or not t %}
+
+.profile-page {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(48px, 10vw, 88px) clamp(16px, 5vw, 24px) 60px;
+}
+
+.profile-shell {
+  width: 100%; max-width: 480px;
+  display: flex; flex-direction: column; gap: 0;
+}
+
+.profile-header {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding-bottom: 28px;
+}
+
+.profile-avatar {
+  position: relative;
+  width: clamp(80px, 18vw, 96px); height: clamp(80px, 18vw, 96px);
+  margin-bottom: 16px;
+}
+.profile-avatar img,
+.profile-avatar-fallback {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+}
+.profile-avatar-fallback {
+  background: linear-gradient(135deg, var(--p-primary),
+    color-mix(in srgb, var(--p-primary) 60%, #2563eb));
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(26px, 7vw, 34px); font-weight: 700; color: #fff;
+}
+.profile-avatar::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 50%;
+  background: conic-gradient(var(--p-primary) 0%, #2563eb 50%, var(--p-primary) 100%);
+  z-index: -1; opacity: .5;
+  animation: spin-ring 8s linear infinite;
+}
+@keyframes spin-ring { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .profile-avatar::after { animation: none; opacity: .4; }
+}
+
+.profile-name   { font-size: clamp(20px, 5vw, 26px); font-weight: 700; letter-spacing: -.4px; margin-bottom: 6px; }
+.profile-handle { font-size: 13px; color: var(--p-primary); font-weight: 500; margin-bottom: 12px; opacity: .85; }
+.profile-bio    { font-size: clamp(13px, 2.2vw, 14px); color: var(--p-text-muted); line-height: 1.65; max-width: 340px; }
+
+.profile-section-divider { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.profile-section-divider::before,
+.profile-section-divider::after { content: ""; flex: 1; height: 1px; background: var(--p-border); }
+.profile-section-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--p-text-muted); }
+
+.links-list { display: flex; flex-direction: column; gap: 10px; }
+
+.pub-link-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--p-surface);
+  border: 1px solid var(--p-border);
+  backdrop-filter: blur(12px);
+  text-decoration: none; color: var(--p-text);
+  position: relative; overflow: hidden; min-height: 58px;
+  transition: background .22s, border-color .22s, transform .22s, box-shadow .22s;
+}
+.pub-link-card::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 20%,
+    color-mix(in srgb, var(--p-text) 4%, transparent) 50%, transparent 80%);
+  transform: translateX(-100%); transition: transform .45s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover {
+    background: color-mix(in srgb, var(--p-text) 8%, transparent);
+    border-color: color-mix(in srgb, var(--p-text) 16%, transparent);
+    transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.35);
+  }
+  .pub-link-card:hover::before { transform: translateX(100%); }
+}
+.pub-link-card::after {
+  content: ""; position: absolute; left: 0; top: 20%; bottom: 20%; width: 2px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, var(--p-primary), #2563eb);
+  opacity: 0; transition: opacity .22s;
+}
+@media (hover: hover) and (pointer: fine) { .pub-link-card:hover::after { opacity: 1; } }
+
+.pub-link-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--p-primary-lo); border: 1px solid var(--p-primary-mid);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.pub-link-icon img { width: 18px; height: 18px; border-radius: 3px; }
+.pub-link-icon svg { width: 15px; height: 15px; stroke: var(--p-primary); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pub-link-text  { flex: 1; min-width: 0; }
+.pub-link-title { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pub-link-url   { font-size: 11px; color: var(--p-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pub-link-chevron { width: 16px; height: 16px; stroke: var(--p-text-muted); fill: none; stroke-width: 2; flex-shrink: 0; transition: transform .2s, stroke .2s; }
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover .pub-link-chevron { stroke: var(--p-text); transform: translateX(3px); }
+}
+
+.profile-empty { text-align: center; padding: 36px 0 20px; color: var(--p-text-muted); font-size: 14px; line-height: 1.6; }
+
+.profile-watermark { margin-top: 36px; display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; }
+.profile-watermark span { font-size: 12px; color: color-mix(in srgb, var(--p-text) 22%, transparent); font-weight: 500; }
+.profile-watermark .wm-brand {
+  font-size: 12px; font-weight: 700;
+  background: linear-gradient(100deg, var(--p-primary), #60a5fa);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  opacity: .6;
+}
+
+{% endif %}
+
+/* ================================================================
+   THEME: CLAY MORPHISM
+   ================================================================ */
+{% if t == 'clay' %}
+
+.profile-page {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(48px, 10vw, 88px) clamp(16px, 5vw, 24px) 60px;
+}
+
+.profile-shell { width: 100%; max-width: 440px; }
+
+.profile-header {
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center; padding-bottom: 32px;
+}
+
+.profile-avatar {
+  width: clamp(88px, 20vw, 108px); height: clamp(88px, 20vw, 108px);
+  margin-bottom: 18px; position: relative;
+}
+.profile-avatar img,
+.profile-avatar-fallback {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+}
+.profile-avatar-fallback {
+  background: linear-gradient(135deg, var(--p-primary),
+    color-mix(in srgb, var(--p-primary) 50%, #e879f9));
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(28px, 7vw, 36px); font-weight: 800; color: #fff;
+  box-shadow: 6px 6px 0 color-mix(in srgb, var(--p-primary) 40%, black);
+}
+
+.clay-card {
+  background: color-mix(in srgb, var(--p-bg) 85%, white);
+  border-radius: 28px;
+  box-shadow:
+    6px 6px 0 color-mix(in srgb, var(--p-bg) 60%, black),
+    0 20px 60px color-mix(in srgb, var(--p-bg) 60%, black);
+  padding: 28px 24px 24px;
+  margin-bottom: 16px;
+  border: 2px solid color-mix(in srgb, var(--p-text) 8%, transparent);
+}
+
+.profile-name   { font-size: clamp(22px, 5vw, 28px); font-weight: 800; letter-spacing: -.6px; color: var(--p-text); margin-bottom: 6px; }
+.profile-handle { font-size: 13px; font-weight: 700; color: var(--p-primary); margin-bottom: 10px; }
+.profile-bio    { font-size: 14px; color: var(--p-text-muted); line-height: 1.65; max-width: 340px; }
+
+.profile-section-divider { display: flex; align-items: center; gap: 10px; margin: 20px 0 16px; }
+.profile-section-divider::before,
+.profile-section-divider::after { content: ""; flex: 1; height: 2px; background: color-mix(in srgb, var(--p-primary) 20%, transparent); border-radius: 2px; }
+.profile-section-label { font-size: 10px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--p-primary); }
+
+.links-list { display: flex; flex-direction: column; gap: 12px; }
+
+.pub-link-card {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--p-bg) 80%, white);
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--p-bg) 65%, black), 0 8px 24px rgba(0,0,0,.18);
+  border: 2px solid color-mix(in srgb, var(--p-text) 8%, transparent);
+  text-decoration: none; color: var(--p-text);
+  min-height: 62px; transition: transform .2s, box-shadow .2s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0 color-mix(in srgb, var(--p-primary) 50%, black), 0 12px 30px rgba(0,0,0,.25);
+    border-color: var(--p-primary);
+  }
+}
+@media (hover: none) {
+  .pub-link-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 color-mix(in srgb, var(--p-bg) 65%, black); }
+}
+.pub-link-card::before, .pub-link-card::after { display: none; }
+
+.pub-link-icon {
+  width: 38px; height: 38px; border-radius: 14px;
+  background: var(--p-primary);
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--p-primary) 60%, black);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+}
+.pub-link-icon img { width: 18px; height: 18px; border-radius: 3px; }
+.pub-link-icon svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.pub-link-text  { flex: 1; min-width: 0; }
+.pub-link-title { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pub-link-url   { font-size: 11px; color: var(--p-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pub-link-chevron { width: 16px; height: 16px; stroke: var(--p-text-muted); fill: none; stroke-width: 2.5; flex-shrink: 0; transition: transform .2s; }
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover .pub-link-chevron { stroke: var(--p-primary); transform: translateX(3px); }
+}
+
+.profile-empty { text-align: center; padding: 36px 0 20px; color: var(--p-text-muted); font-size: 14px; }
+.profile-watermark { margin-top: 36px; display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; }
+.profile-watermark span { font-size: 12px; color: color-mix(in srgb, var(--p-text) 22%, transparent); font-weight: 500; }
+.profile-watermark .wm-brand { font-size: 12px; font-weight: 700; color: var(--p-primary); }
+
+{% endif %}
+
+/* ================================================================
+   THEME: MINIMALISM
+   ================================================================ */
+{% if t == 'minimal' %}
+
+.profile-page {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: clamp(64px, 10vw, 100px) clamp(24px, 6vw, 40px) 80px;
+}
+
+.profile-shell { width: 100%; max-width: 400px; }
+
+.profile-header {
+  display: flex; flex-direction: column; align-items: flex-start;
+  text-align: left; padding-bottom: 36px;
+  border-bottom: 1px solid color-mix(in srgb, var(--p-text) 12%, transparent);
+  margin-bottom: 32px;
+}
+
+.profile-avatar {
+  width: clamp(56px, 12vw, 72px); height: clamp(56px, 12vw, 72px); margin-bottom: 20px;
+}
+.profile-avatar img,
+.profile-avatar-fallback {
+  width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block;
+}
+.profile-avatar-fallback {
+  background: var(--p-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(20px, 5vw, 26px); font-weight: 700; color: #fff;
+}
+
+.profile-name   { font-size: clamp(20px, 4.5vw, 26px); font-weight: 600; letter-spacing: -.3px; color: var(--p-text); margin-bottom: 4px; }
+.profile-handle { font-size: 12px; font-weight: 500; color: var(--p-text-muted); letter-spacing: .04em; margin-bottom: 12px; }
+.profile-bio    { font-size: 14px; color: var(--p-text-muted); line-height: 1.75; max-width: 360px; }
+
+.profile-section-divider { display: none; }
+
+.links-list { display: flex; flex-direction: column; gap: 1px; }
+
+.pub-link-card {
+  display: flex; align-items: center; gap: 16px; padding: 16px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--p-text) 8%, transparent);
+  text-decoration: none; color: var(--p-text);
+  background: transparent; border-radius: 0;
+  border-left: none; border-right: none; border-top: none;
+  min-height: 60px; transition: opacity .2s;
+}
+@media (hover: hover) and (pointer: fine) { .pub-link-card:hover { opacity: .6; } }
+.pub-link-card::before, .pub-link-card::after { display: none; }
+
+.pub-link-icon {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--p-primary-lo); border: 1px solid var(--p-primary-mid);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+}
+.pub-link-icon img { width: 16px; height: 16px; border-radius: 50%; }
+.pub-link-icon svg { width: 14px; height: 14px; stroke: var(--p-primary); fill: none; stroke-width: 1.8; }
+.pub-link-text  { flex: 1; min-width: 0; }
+.pub-link-title { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pub-link-url   { font-size: 11px; color: var(--p-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.pub-link-chevron { width: 14px; height: 14px; stroke: var(--p-text-muted); fill: none; stroke-width: 1.5; flex-shrink: 0; transition: transform .2s; }
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover .pub-link-chevron { transform: translateX(3px); }
+}
+
+.profile-empty { padding: 32px 0; color: var(--p-text-muted); font-size: 13px; }
+.profile-watermark { margin-top: 48px; display: flex; align-items: center; gap: 6px; text-decoration: none; }
+.profile-watermark span { font-size: 11px; color: color-mix(in srgb, var(--p-text) 25%, transparent); letter-spacing: .05em; text-transform: uppercase; }
+.profile-watermark .wm-brand { font-size: 11px; font-weight: 700; color: var(--p-primary); letter-spacing: .05em; text-transform: uppercase; }
+
+{% endif %}
+
+/* ================================================================
+   THEME: NEO BRUTALISM
+   ================================================================ */
+{% if t == 'brutalist' %}
+
+.profile-page {
+  min-height: 100dvh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: clamp(48px, 10vw, 80px) clamp(16px, 5vw, 24px) 60px;
+}
+
+.profile-shell { width: 100%; max-width: 480px; }
+
+.profile-header {
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  padding: 32px 28px 28px;
+  background: var(--p-bg);
+  border: 3px solid var(--p-text);
+  box-shadow: 6px 6px 0 var(--p-text);
+  margin-bottom: 24px;
+}
+
+.profile-avatar { width: clamp(80px, 18vw, 96px); height: clamp(80px, 18vw, 96px); margin-bottom: 16px; }
+.profile-avatar img,
+.profile-avatar-fallback {
+  width: 100%; height: 100%; border-radius: 0; object-fit: cover; display: block;
+  border: 3px solid var(--p-text);
+  box-shadow: 4px 4px 0 var(--p-primary);
+}
+.profile-avatar-fallback {
+  background: var(--p-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(26px, 7vw, 34px); font-weight: 900; color: var(--p-bg);
+}
+
+.profile-name {
+  font-size: clamp(22px, 5.5vw, 30px); font-weight: 900;
+  letter-spacing: -.5px; text-transform: uppercase; color: var(--p-text);
+  margin-bottom: 4px; text-shadow: 3px 3px 0 var(--p-primary);
+}
+.profile-handle { font-size: 13px; font-weight: 700; color: var(--p-primary); margin-bottom: 10px; letter-spacing: .04em; }
+.profile-bio    { font-size: 14px; color: var(--p-text-muted); line-height: 1.6; max-width: 340px; }
+
+.profile-section-divider { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.profile-section-divider::before,
+.profile-section-divider::after { content: ""; flex: 1; height: 3px; background: var(--p-text); }
+.profile-section-label { font-size: 10px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; color: var(--p-text); white-space: nowrap; }
+
+.links-list { display: flex; flex-direction: column; gap: 12px; }
+
+.pub-link-card {
+  display: flex; align-items: center; gap: 16px; padding: 14px 18px;
+  border-radius: 0;
+  background: var(--p-bg);
+  border: 3px solid var(--p-text);
+  box-shadow: 5px 5px 0 var(--p-primary);
+  text-decoration: none; color: var(--p-text);
+  min-height: 64px; transition: transform .12s, box-shadow .12s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--p-primary); }
+}
+@media (hover: none) {
+  .pub-link-card:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--p-primary); }
+}
+.pub-link-card::before, .pub-link-card::after { display: none; }
+
+.pub-link-icon {
+  width: 40px; height: 40px; border-radius: 0;
+  background: var(--p-primary);
+  border: 2px solid var(--p-text);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+}
+.pub-link-icon img { width: 20px; height: 20px; }
+.pub-link-icon svg { width: 18px; height: 18px; stroke: var(--p-bg); fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.pub-link-text  { flex: 1; min-width: 0; }
+.pub-link-title { font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pub-link-url   { font-size: 11px; color: var(--p-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 3px; font-weight: 500; }
+.pub-link-chevron { width: 18px; height: 18px; stroke: var(--p-text); fill: none; stroke-width: 2.5; flex-shrink: 0; transition: transform .12s; }
+@media (hover: hover) and (pointer: fine) {
+  .pub-link-card:hover .pub-link-chevron { transform: translateX(4px); stroke: var(--p-primary); }
+}
+
+.profile-empty { text-align: center; padding: 36px 0 20px; color: var(--p-text-muted); font-size: 14px; }
+.profile-watermark { margin-top: 36px; display: flex; align-items: center; justify-content: center; gap: 7px; text-decoration: none; }
+.profile-watermark span { font-size: 12px; color: color-mix(in srgb, var(--p-text) 30%, transparent); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+.profile-watermark .wm-brand { font-size: 12px; font-weight: 900; color: var(--p-primary); letter-spacing: .06em; text-transform: uppercase; }
+
+{% endif %}
+</style>
+{% endwith %}
+{% endblock %}
+
+
+{% block content %}
+<div class="profile-bg-layer" aria-hidden="true"></div>
+<div class="profile-bg-overlay" aria-hidden="true"></div>
+
+{% with t=profile.theme %}
+<div class="profile-page">
+  <div class="profile-shell">
+
+    {% if t == 'clay' %}
+    <div class="clay-card profile-header fade">
+    {% else %}
+    <div class="profile-header fade">
+    {% endif %}
+
+      <div class="profile-avatar">
+        {% if profile.avatar %}
+          <img src="{{ profile.avatar.url }}" alt="{{ profile.name }} avatar">
+        {% else %}
+          <div class="profile-avatar-fallback" aria-hidden="true">
+            {{ profile.username|first|upper }}
+          </div>
+        {% endif %}
+      </div>
+
+      <h1 class="profile-name">{{ profile.name|default:profile.username }}</h1>
+      <p class="profile-handle">/@{{ profile.username }}</p>
+      {% if profile.bio %}
+        <p class="profile-bio">{{ profile.bio }}</p>
+      {% endif %}
+
+    </div>
+
+    {% if links %}
+      <div class="profile-section-divider fade delay-1">
+        <span class="profile-section-label">Links</span>
+      </div>
+      <div class="links-list" role="list">
+        {% for link in links %}
+          <a class="pub-link-card fade delay-{% if forloop.counter <= 3 %}{{ forloop.counter }}{% else %}3{% endif %}"
+             href="{{ link.url }}"
+             target="_blank" rel="noopener noreferrer"
+             role="listitem"
+             aria-label="{{ link.title }}">
+            <div class="pub-link-icon">
+              <img src="https://www.google.com/s2/favicons?domain={{ link.url }}&sz=32"
+                   alt="" aria-hidden="true"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+              <svg style="display:none;" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+            <div class="pub-link-text">
+              <p class="pub-link-title">{{ link.title }}</p>
+              <p class="pub-link-url">{{ link.url }}</p>
+            </div>
+            <svg class="pub-link-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="profile-empty fade delay-1">
+        <p>No links added yet.</p>
+      </div>
+    {% endif %}
+
+    <a class="profile-watermark fade delay-2" href="/" aria-label="Made with AEiViON">
+      <span>made&nbsp;with</span>
+      <span class="wm-brand">AEiViON</span>
+    </a>
+
+  </div>
+</div>
+{% endwith %}
+{% endblock %}

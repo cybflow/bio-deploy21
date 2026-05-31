@@ -1,0 +1,786 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — AEiViON{% endblock %}
+
+{% block menu_home %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+
+/* ── Dashboard-specific styles ── */
+
+/* Page shell */
+.dash-page {
+  padding-block: clamp(28px, 5vw, 48px);
+}
+
+/* ── Hero row: greeting + stat chips ── */
+.dash-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: clamp(24px, 4vw, 40px);
+}
+
+.dash-greeting {}
+
+.dash-greeting .eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.dash-greeting .eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 8px rgba(255,77,0,.6);
+}
+
+.dash-greeting h1 {
+  font-size: clamp(22px, 4.5vw, 36px);
+  font-weight: 700;
+  letter-spacing: -.5px;
+  line-height: 1.15;
+}
+
+.dash-greeting h1 .name {
+  background: linear-gradient(100deg, #fff 40%, rgba(255,255,255,.5));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dash-greeting .public-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .2s;
+}
+
+.dash-greeting .public-link svg {
+  width: 13px; height: 13px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  opacity: .6; transition: opacity .2s, transform .2s;
+}
+
+.dash-greeting .public-link:hover { color: #fff; }
+.dash-greeting .public-link:hover svg { opacity: 1; transform: translate(2px,-2px); }
+
+/* Stat chips strip */
+.stat-strip {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-self: center;
+}
+
+/* ── Layout: 2-col on wide, stack on mobile ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: clamp(14px, 2.5vw, 22px);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .dash-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Profile card ── */
+.profile-card {}
+
+.profile-avatar-wrap {
+  position: relative;
+  width: 72px; height: 72px;
+  flex-shrink: 0;
+}
+
+.profile-avatar-wrap img,
+.profile-avatar-initials {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar-initials {
+  background: linear-gradient(135deg, var(--blue), var(--orange));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -.5px;
+}
+
+/* Online dot */
+.profile-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  bottom: 3px; right: 3px;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 8px rgba(34,197,94,.5);
+}
+
+.profile-meta { flex: 1; min-width: 0; }
+
+.profile-name {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.2px;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-bio {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.profile-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: rgba(255,77,0,.8);
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.profile-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 18px 0;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Links column ── */
+.links-col {}
+
+.links-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.links-header h2 {
+  font-size: clamp(16px, 2.5vw, 18px);
+  font-weight: 600;
+}
+
+/* Individual link card (extends base .link-card) */
+.dash-link-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 10px;
+  position: relative;
+  transition: background .2s, border-color .2s, transform .2s, box-shadow .2s;
+  overflow: hidden;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dash-link-card:hover {
+    background: var(--surface-hi);
+    border-color: var(--border-hi);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+
+@media (hover: none) {
+  .dash-link-card:active { background: var(--surface-hi); }
+}
+
+/* Left accent line on hover */
+.dash-link-card::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 20%; bottom: 20%;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--orange);
+  opacity: 0;
+  transition: opacity .2s, top .2s, bottom .2s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dash-link-card:hover::before { opacity: 1; top: 15%; bottom: 15%; }
+}
+
+.link-index {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .04em;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.link-icon {
+  width: 36px; height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--orange-lo);
+  border: 1px solid rgba(255,77,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.link-icon svg {
+  width: 16px; height: 16px;
+  stroke: var(--orange); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.link-info { flex: 1; min-width: 0; }
+
+.link-title {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.link-url {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+  display: block;
+  transition: color .2s;
+}
+
+.link-url:hover { color: rgba(255,255,255,.7); }
+
+.link-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.link-action-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: background .2s, border-color .2s, color .2s;
+  text-decoration: none;
+}
+
+.link-action-btn svg {
+  width: 14px; height: 14px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .link-action-btn:hover {
+    background: var(--surface-hi);
+    border-color: var(--border);
+    color: #fff;
+  }
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center;
+  padding: clamp(32px, 6vw, 56px) 24px;
+}
+
+.empty-icon {
+  width: 56px; height: 56px;
+  border-radius: var(--r-md);
+  background: var(--orange-lo);
+  border: 1px solid rgba(255,77,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.empty-icon svg {
+  width: 24px; height: 24px;
+  stroke: var(--orange); fill: none; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.empty-title {
+  font-size: 16px; font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.empty-desc {
+  font-size: 13px; color: var(--muted);
+  margin-bottom: 20px; line-height: 1.6;
+}
+
+/* ── Quick Actions card ── */
+.actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 400px) {
+  .actions-grid { grid-template-columns: 1fr; }
+}
+
+.action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  transition: background .2s, border-color .2s, transform .2s;
+  min-height: 80px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .action-tile:hover {
+    background: var(--surface-hi);
+    border-color: var(--border-hi);
+    transform: translateY(-2px);
+  }
+}
+
+@media (hover: none) {
+  .action-tile:active { background: var(--surface-hi); }
+}
+
+.action-tile-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.action-tile-icon svg {
+  width: 15px; height: 15px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+.action-tile-icon.orange { background: var(--orange-lo); border: 1px solid rgba(255,77,0,.2); color: #ff7040; }
+.action-tile-icon.blue   { background: var(--blue-lo);   border: 1px solid rgba(37,99,235,.2); color: #60a5fa; }
+.action-tile-icon.muted  { background: var(--surface-hi); border: 1px solid var(--border); color: var(--muted); }
+
+.action-tile-label {
+  font-size: 13px; font-weight: 600;
+  letter-spacing: -.1px;
+}
+
+.action-tile-desc {
+  font-size: 11px; color: var(--muted);
+  line-height: 1.4; margin-top: -4px;
+}
+
+/* Section sub-header inside glass card */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.card-header h2 {
+  font-size: clamp(15px, 2.2vw, 17px);
+  font-weight: 600;
+}
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="dash-page container">
+
+  <!-- ── Hero row ── -->
+  <div class="dash-hero fade">
+
+    <div class="dash-greeting">
+      <p class="eyebrow">Dashboard</p>
+      <h1>
+        Welcome back,
+        <span class="name">{{ request.user.name }}</span>
+      </h1>
+      <a class="public-link" href="/@{{ request.user.username }}" target="_blank" rel="noopener">
+        /@{{ request.user.username }}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+      </a>
+    </div>
+
+    <div class="stat-strip">
+      <span class="stat-chip">
+        <span class="stat-chip-dot"></span>
+        {{ links|length }} link{% if links|length != 1 %}s{% endif %}
+      </span>
+      <span class="stat-chip" style="border-color:var(--border-hi);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+             stroke="rgba(255,255,255,.4)" stroke-width="2" aria-hidden="true">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        Public
+      </span>
+      <a class="stat-chip" href="/dashboard/theme/"
+         style="border-color:rgba(139,92,246,.3);background:rgba(139,92,246,.08);color:#a78bfa;text-decoration:none;gap:6px;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/>
+          <circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/>
+          <path d="M12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke-width="1.6"/>
+        </svg>
+        {{ request.user.get_theme_display|default:"Default" }}
+      </a>
+    </div>
+
+  </div>
+
+  <!-- ── Main grid ── -->
+  <div class="dash-grid">
+
+    <!-- Left col: profile + quick actions -->
+    <div>
+
+      <!-- Profile card -->
+      <div class="glass profile-card fade delay-1">
+
+        <div class="card-header">
+          <h2>Profile</h2>
+          <a class="btn btn-ghost" href="/dashboard/edit/"
+             style="padding:6px 14px;min-height:34px;font-size:12px;">
+            Edit
+          </a>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:16px;">
+
+          <div class="profile-avatar-wrap">
+            {% if request.user.avatar %}
+              <img src="{{ request.user.avatar.url }}"
+                   alt="{{ request.user.name }} avatar">
+            {% else %}
+              <div class="profile-avatar-initials" aria-hidden="true">
+                {{ request.user.username|first|upper }}
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="profile-meta">
+            <p class="profile-name">{{ request.user.name }}</p>
+            <p class="profile-bio">{{ request.user.bio }}</p>
+            <span class="profile-handle">/@{{ request.user.username }}</span>
+          </div>
+
+        </div>
+
+        <hr class="profile-divider">
+
+        <div class="profile-actions">
+          <a class="btn btn-primary" href="/@{{ request.user.username }}"
+             target="_blank" rel="noopener"
+             style="flex:1;font-size:13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/>
+              <line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+            View page
+          </a>
+          <a class="btn btn-ghost" href="/dashboard/edit/"
+             style="font-size:13px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </a>
+          <a class="btn btn-ghost" href="/dashboard/theme/"
+             style="font-size:13px;padding-inline:10px;"
+             title="Customise theme">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="13.5" cy="6.5" r="2.5"/>
+              <circle cx="17.5" cy="10.5" r="2.5"/>
+              <circle cx="8.5"  cy="7.5"  r="2.5"/>
+              <circle cx="6.5"  cy="12.5" r="2.5"/>
+              <path d="M12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke-width="1.6"/>
+            </svg>
+          </a>
+        </div>
+
+      </div>
+
+      <!-- Quick actions -->
+      <div class="glass fade delay-2">
+
+        <div class="card-header">
+          <h2>Quick Actions</h2>
+        </div>
+
+        <div class="actions-grid">
+
+          {% if link_at_limit %}
+          <div class="action-tile" style="opacity:.55;cursor:not-allowed;" title="Link limit reached">
+            <div class="action-tile-icon" style="background:rgba(220,38,38,.1);border-color:rgba(220,38,38,.25);">
+              <svg viewBox="0 0 24 24" aria-hidden="true" style="stroke:#f87171;">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Add Link</p>
+              <p class="action-tile-desc" style="color:#f87171;">{{ link_count }}/{{ link_limit }} — limit reached</p>
+            </div>
+          </div>
+          {% else %}
+          <a class="action-tile" href="/dashboard/add-link/">
+            <div class="action-tile-icon orange">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Add Link</p>
+              <p class="action-tile-desc">{% if link_limit == 0 %}Unlimited links{% else %}{{ link_count }}/{{ link_limit }} used{% endif %}</p>
+            </div>
+          </a>
+          {% endif %}
+
+          <a class="action-tile" href="/dashboard/edit/">
+            <div class="action-tile-icon blue">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Edit Profile</p>
+              <p class="action-tile-desc">Name, bio, avatar</p>
+            </div>
+          </a>
+
+          <a class="action-tile" href="/dashboard/theme/">
+            <div class="action-tile-icon" style="background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.2);color:#a78bfa;">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="13.5" cy="6.5" r="2.5"/>
+                <circle cx="17.5" cy="10.5" r="2.5"/>
+                <circle cx="8.5"  cy="7.5"  r="2.5"/>
+                <circle cx="6.5"  cy="12.5" r="2.5"/>
+                <path d="M12 20a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke-width="1.6"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Customise Theme</p>
+              <p class="action-tile-desc">Colours &amp; templates</p>
+            </div>
+          </a>
+
+          <a class="action-tile" href="/@{{ request.user.username }}"
+             target="_blank" rel="noopener">
+            <div class="action-tile-icon muted">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Public Page</p>
+              <p class="action-tile-desc">See what visitors see</p>
+            </div>
+          </a>
+
+          <a class="action-tile" href="/logout/">
+            <div class="action-tile-icon muted">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                <polyline points="16 17 21 12 16 7"/>
+                <line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <p class="action-tile-label">Sign Out</p>
+              <p class="action-tile-desc">Log out of account</p>
+            </div>
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Right col: links -->
+    <div class="links-col">
+
+      <div class="glass fade delay-2">
+
+        <div class="card-header">
+          <h2>
+            Your Links
+            {% if links %}
+              <span class="badge badge-muted" style="margin-left:8px;">{{ links|length }}</span>
+            {% endif %}
+            {% if link_limit > 0 %}
+              <span style="font-size:11px;color:var(--muted);margin-left:6px;font-weight:400;">({{ link_count }}/{{ link_limit }})</span>
+            {% elif link_limit == 0 and sub %}
+              <span style="font-size:11px;color:var(--muted);margin-left:6px;font-weight:400;">unlimited</span>
+            {% endif %}
+          </h2>
+          {% if not link_at_limit %}
+          <a class="btn btn-primary" href="/dashboard/add-link/"
+             style="padding:7px 16px;min-height:36px;font-size:13px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Link
+          </a>
+          {% else %}
+          <a href="/" class="btn" style="font-size:12px;padding:6px 14px;min-height:34px;background:rgba(220,38,38,.1);color:#f87171;border:1px solid rgba(220,38,38,.25);">
+            ⚡ Upgrade for more
+          </a>
+          {% endif %}
+        </div>
+
+        {% for link in links %}
+
+          <div class="dash-link-card fade" style="transition-delay:{{ forloop.counter0|add:"2" }}00ms;">
+
+            <span class="link-index">{{ forloop.counter }}</span>
+
+            <div class="link-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+
+            <div class="link-info">
+              <p class="link-title">{{ link.title }}</p>
+              <a class="link-url" href="{{ link.url }}"
+                 target="_blank" rel="noopener">{{ link.url }}</a>
+            </div>
+
+            <div class="link-actions">
+              <a class="link-action-btn"
+                 href="{{ link.url }}" target="_blank" rel="noopener"
+                 title="Open link" aria-label="Open {{ link.title }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+              <a class="link-action-btn"
+                 href="/dashboard/edit-link/{{ link.id }}/"
+                 title="Edit link" aria-label="Edit {{ link.title }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </a>
+              <a class="link-action-btn"
+                 href="/dashboard/delete-link/{{ link.id }}/"
+                 style="color:rgba(255,100,60,.5);"
+                 title="Delete link" aria-label="Delete {{ link.title }}">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <polyline points="3 6 5 6 21 6"/>
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                  <path d="M10 11v6"/><path d="M14 11v6"/>
+                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                </svg>
+              </a>
+            </div>
+
+          </div>
+
+        {% empty %}
+
+          <div class="empty-state fade delay-3">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+            </div>
+            <p class="empty-title">No links yet</p>
+            <p class="empty-desc">
+              Add your first link and it will<br>appear on your public page.
+            </p>
+            <a class="btn btn-primary" href="/dashboard/add-link/">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add your first link
+            </a>
+          </div>
+
+        {% endfor %}
+
+      </div>
+
+    </div>
+
+  </div><!-- /dash-grid -->
+
+</div><!-- /dash-page -->
+
+{% endblock %}

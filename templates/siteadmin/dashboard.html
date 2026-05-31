@@ -1,0 +1,90 @@
+{% extends "siteadmin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block nav_dash %}active{% endblock %}
+{% block mnav_dash %}active{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-icon si-orange"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <div class="stat-body"><p class="stat-label">Total Users</p><p class="stat-value">{{ total_users }}</p><p class="stat-sub">{{ active_users }} active</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-blue"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+    <div class="stat-body"><p class="stat-label">Total Links</p><p class="stat-value">{{ total_links }}</p><p class="stat-sub">{{ active_links }} active</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-green"><svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></div>
+    <div class="stat-body"><p class="stat-label">Plans Defined</p><p class="stat-value">{{ plans|length }}</p><p class="stat-sub">subscription tiers</p></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon si-purple"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></div>
+    <div class="stat-body"><p class="stat-label">Site Theme</p><p class="stat-value" style="font-size:15px;margin-top:3px;">{{ site.get_site_theme_display }}</p><p class="stat-sub">{{ site.site_name }}</p></div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px;">
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Plan Distribution</span>
+      <a href="{% url 'admin_plan_list' %}" class="btn btn-ghost btn-sm">Manage plans</a>
+    </div>
+    <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+      {% for slug, name, count in plan_breakdown %}
+      <div style="display:flex;align-items:center;gap:12px;">
+        <span style="font-size:13px;color:var(--muted);min-width:90px;">{{ name }}</span>
+        <div style="flex:1;height:6px;background:var(--s3);border-radius:3px;overflow:hidden;">
+          {% if total_users and count %}
+          <div style="height:100%;border-radius:3px;background:var(--orange);width:{% widthratio count total_users 100 %}%;transition:width .4s;"></div>
+          {% endif %}
+        </div>
+        <span style="font-size:13px;font-weight:600;min-width:28px;text-align:right;">{{ count }}</span>
+      </div>
+      {% empty %}
+      <p style="font-size:13px;color:var(--muted);">No plans defined yet. <a href="{% url 'admin_plan_create' %}" style="color:#ff7040;">Create one →</a></p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Site Status</span>
+      <a href="{% url 'admin_site_settings' %}" class="btn btn-ghost btn-sm">Edit</a>
+    </div>
+    <div class="panel-body" style="display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12.5px;color:var(--muted);">Site name</span><span style="font-size:13px;font-weight:600;">{{ site.site_name }}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12.5px;color:var(--muted);">Theme</span><span style="font-size:13px;font-weight:600;">{{ site.get_site_theme_display }}</span></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12.5px;color:var(--muted);">Accent</span><div style="display:flex;align-items:center;gap:7px;"><span style="width:14px;height:14px;border-radius:50%;background:{{ site.accent_color }};display:inline-block;border:1px solid var(--border);"></span><span class="mono">{{ site.accent_color }}</span></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12.5px;color:var(--muted);">Public signup</span>{% if site.allow_signup %}<span class="badge b-active">Open</span>{% else %}<span class="badge b-inactive">Closed</span>{% endif %}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:12.5px;color:var(--muted);">Maintenance</span>{% if site.maintenance %}<span class="badge b-featured">Active</span>{% else %}<span class="badge b-active">Off</span>{% endif %}</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">Recently Joined</span>
+    <a href="{% url 'admin_user_list' %}" class="btn btn-ghost btn-sm">View all</a>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>User</th><th>Joined</th><th>Plan</th><th>Links</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+      {% for u in recent_users %}
+      <tr>
+        <td><div class="user-row"><div class="u-avatar">{{ u.username|first|upper }}</div><div><p class="u-name">{{ u.username }}</p><p class="u-email">{{ u.email|default:"—" }}</p></div></div></td>
+        <td class="mono">{{ u.date_joined|date:"d M Y" }}</td>
+        <td>{% if u.subscription %}<span class="badge b-{{ u.subscription.plan_slug }}">{{ u.subscription.get_plan_display }}</span>{% else %}<span class="badge b-free">Free</span>{% endif %}</td>
+        <td style="text-align:center;font-size:13px;font-weight:600;">{{ u.links.count }}</td>
+        <td>{% if u.is_active %}<span class="badge b-active">Active</span>{% else %}<span class="badge b-inactive">Disabled</span>{% endif %}</td>
+        <td><a href="{% url 'admin_user_edit' u.pk %}" class="btn btn-ghost btn-sm">Edit</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No users yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

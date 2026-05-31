@@ -1,0 +1,72 @@
+{% extends "siteadmin/base.html" %}
+{% block title %}Features{% endblock %}
+{% block page_title %}Feature Catalogue{% endblock %}
+{% block nav_plans %}active{% endblock %}
+{% block mnav_plans %}active{% endblock %}
+
+{% block content %}
+<div class="panel">
+  <div class="panel-header">
+    <span class="panel-title">All Features ({{ features|length }})</span>
+    <a href="{% url 'admin_feature_create' %}" class="btn btn-primary btn-sm">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Feature
+    </a>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>Feature</th><th>Slug</th><th>Type</th><th>Default</th>
+        {% for plan in plans %}<th>{{ plan.name }}</th>{% endfor %}
+        <th></th></tr>
+      </thead>
+      <tbody>
+        {% for feat in features %}
+        <tr>
+          <td>
+            <p style="font-size:13px;font-weight:600;">{{ feat.name }}</p>
+            {% if feat.description %}<p style="font-size:11px;color:var(--muted);">{{ feat.description }}</p>{% endif %}
+          </td>
+          <td class="mono">{{ feat.slug }}</td>
+          <td><span class="badge b-free" style="text-transform:uppercase;font-size:9.5px;">{{ feat.feature_type }}</span></td>
+          <td class="mono">{{ feat.default_value }}</td>
+          {% for plan in plans %}
+          <td>
+            {% for pfv in plan.feature_values.all %}
+              {% if pfv.feature.id == feat.id %}
+                {% if feat.feature_type == 'bool' %}
+                  {% if pfv.value == 'true' %}
+                    <span class="badge b-active">✓ On</span>
+                  {% else %}
+                    <span class="badge b-inactive">✗ Off</span>
+                  {% endif %}
+                {% else %}
+                  <span class="badge b-staff">{{ pfv.value }}</span>
+                {% endif %}
+              {% endif %}
+            {% endfor %}
+          </td>
+          {% endfor %}
+          <td><a href="{% url 'admin_feature_edit' feat.pk %}" class="btn btn-ghost btn-sm">Edit</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="99" style="text-align:center;padding:32px;color:var(--muted);">
+          No features yet. <a href="{% url 'admin_feature_create' %}" style="color:var(--ac);">Create the first one →</a>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel" style="border-color:var(--blo);">
+  <div class="panel-header"><span class="panel-title" style="color:#60a5fa;">Feature Types</span></div>
+  <div class="panel-body">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;">
+      <div><p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Bool (On/Off)</p><p style="font-size:13px;color:var(--muted);line-height:1.6;">Enter <code style="color:var(--ac);">true</code> or <code style="color:var(--ac);">false</code>. Used for features like profile themes, custom fonts, analytics.</p></div>
+      <div><p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Int (Numeric Limit)</p><p style="font-size:13px;color:var(--muted);line-height:1.6;">Enter a number. <code style="color:var(--ac);">0</code> means unlimited. Used for max links, username changes/month, extra profiles.</p></div>
+      <div><p style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Choices</p><p style="font-size:13px;color:var(--muted);line-height:1.6;">Enter a comma-separated list of allowed values. The plan value must be one of them.</p></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

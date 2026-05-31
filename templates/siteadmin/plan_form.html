@@ -1,0 +1,259 @@
+{% extends "siteadmin/base.html" %}
+{% block title %}{{ action }} Plan{% endblock %}
+{% block page_title %}{{ action }} Subscription Plan{% endblock %}
+{% block nav_plans %}active{% endblock %}
+{% block mnav_plans %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.field input[type="text"],.field input[type="number"],.field textarea,.field select{
+  width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--r-sm);color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;
+  appearance:none;min-height:40px;margin-bottom:0}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:rgba(255,77,0,.4);box-shadow:0 0 0 3px rgba(255,77,0,.08)}
+.field input[type="checkbox"]{width:16px;height:16px;min-height:unset;accent-color:var(--orange);cursor:pointer}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.field textarea{resize:vertical;min-height:100px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{% url 'admin_plan_list' %}">Plans</a>
+  <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  <span>{{ action }}{% if plan %}: {{ plan.name }}{% endif %}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;">
+
+  <!-- Form -->
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-title">Plan Details</span>
+      {% if plan %}<span style="font-size:12px;color:var(--muted);">{{ sub_count }} subscriber{{ sub_count|pluralize }}</span>{% endif %}
+    </div>
+    <div class="panel-body">
+      <form method="post" id="plan-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Plan name *</label>
+            {{ form.name }}
+            {% if form.name.errors %}<p style="font-size:11px;color:#f87171;margin-top:3px;">{{ form.name.errors.0 }}</p>{% endif %}
+          </div>
+          <div class="field">
+            <label class="field-label">Slug * <span style="font-size:11px;color:var(--muted);">(unique, e.g. free / pro)</span></label>
+            {{ form.slug }}
+            {% if form.slug.errors %}<p style="font-size:11px;color:#f87171;margin-top:3px;">{{ form.slug.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">Monthly price</label>
+            {{ form.price }}
+            <p class="field-hint">Enter 0 for a free plan.</p>
+          </div>
+          <div class="field">
+            <label class="field-label">Price label</label>
+            {{ form.price_label }}
+            <p class="field-hint">Shown next to the price, e.g. /month.</p>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Short description</label>
+          {{ form.description }}
+          {% if form.description.errors %}<p style="font-size:11px;color:#f87171;margin-top:3px;">{{ form.description.errors.0 }}</p>{% endif %}
+        </div>
+
+        <div class="field">
+          <label class="field-label">Features <span style="font-size:11px;color:var(--muted);">(one per line)</span></label>
+          {{ form.features }}
+          <p class="field-hint">Each line becomes a bullet point on the home page pricing card.</p>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label class="field-label">CTA button label</label>
+            {{ form.cta_label }}
+          </div>
+          <div class="field">
+            <label class="field-label">Display order <span style="font-size:11px;color:var(--muted);">(lower = first)</span></label>
+            {{ form.order }}
+          </div>
+        </div>
+
+        <div style="display:flex;gap:24px;margin:16px 0 20px;">
+          <label class="field-check">{{ form.show_on_home }}<span>Show on home page pricing section</span></label>
+          <label class="field-check">{{ form.is_featured }}<span>Featured / highlighted card</span></label>
+        </div>
+
+        <div style="display:flex;gap:10px;padding-top:16px;border-top:1px solid var(--border);">
+          <button type="submit" class="btn btn-primary">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            Save plan
+          </button>
+          <a href="{% url 'admin_plan_list' %}" class="btn btn-ghost">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right column: preview + delete -->
+  <div>
+
+    <!-- Live preview card -->
+    <div class="panel" style="margin-bottom:14px;">
+      <div class="panel-header"><span class="panel-title">Home Page Preview</span></div>
+      <div class="panel-body" style="padding:14px;">
+        <div id="plan-preview" style="border-radius:12px;padding:20px;background:var(--s2);border:1px solid var(--border);transition:border-color .25s;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span id="prev-name" style="font-size:13px;font-weight:700;">{{ form.name.value|default:'Plan name' }}</span>
+            <span id="prev-featured-badge" class="badge b-featured" style="{% if not form.is_featured.value %}display:none{% endif %}">Popular</span>
+          </div>
+          <p id="prev-price" style="font-size:26px;font-weight:700;letter-spacing:-1px;line-height:1;margin:6px 0 2px;">
+            {% if form.price.value == '0' or not form.price.value %}$0{% else %}${{ form.price.value }}{% endif %}
+          </p>
+          <p id="prev-plabel" style="font-size:12px;color:var(--muted);margin-bottom:8px;">{{ form.price_label.value|default:'/month' }}</p>
+          <p id="prev-desc" style="font-size:12px;color:var(--muted);margin-bottom:12px;">{{ form.description.value|default:'' }}</p>
+          <ul id="prev-features" style="list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:14px;font-size:12px;">
+            {% if plan %}{% for feat in plan.features_list %}<li style="display:flex;align-items:center;gap:7px;"><span style="width:12px;height:12px;border-radius:50%;background:var(--olo);border:1px solid var(--omid);flex-shrink:0;"></span>{{ feat }}</li>{% endfor %}{% endif %}
+          </ul>
+          <div id="prev-cta" style="padding:7px 12px;background:var(--orange);border-radius:20px;text-align:center;font-size:12px;font-weight:600;color:#fff;">
+            {{ form.cta_label.value|default:'Get started' }}
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:8px;">Updates as you type</p>
+      </div>
+    </div>
+
+    <!-- Delete zone (edit mode only) -->
+    {% if feature_rows %}
+    <!-- Feature Matrix -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-header">
+        <span class="panel-title">Feature Settings</span>
+        <a href="{% url 'admin_feature_list' %}" class="btn btn-ghost btn-sm" style="font-size:11px;">Manage features</a>
+      </div>
+      <div class="panel-body">
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="save_features">
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            {% for row in feature_rows %}
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--s2);border-radius:var(--r-sm);gap:12px;flex-wrap:wrap;">
+              <div style="min-width:160px;">
+                <p style="font-size:13px;font-weight:600;">{{ row.feature.name }}</p>
+                {% if row.feature.description %}<p style="font-size:11px;color:var(--muted);">{{ row.feature.description }}</p>{% endif %}
+                <p style="font-size:10px;color:var(--muted);font-family:monospace;margin-top:2px;">{{ row.feature.slug }}</p>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                {% if row.feature.feature_type == 'bool' %}
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="radio" name="feat_{{ row.feature.slug }}" value="true" {% if row.value == 'true' %}checked{% endif %} style="accent-color:var(--ac);">
+                    <span style="font-size:13px;color:#4ade80;">On</span>
+                  </label>
+                  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <input type="radio" name="feat_{{ row.feature.slug }}" value="false" {% if row.value != 'true' %}checked{% endif %} style="accent-color:var(--ac);">
+                    <span style="font-size:13px;color:#f87171;">Off</span>
+                  </label>
+                {% elif row.feature.feature_type == 'int' %}
+                  <input type="number" name="feat_{{ row.feature.slug }}" value="{{ row.value }}" min="0"
+                    style="width:80px;padding:6px 10px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-xs);color:var(--text);font-size:14px;text-align:center;outline:none;">
+                  <span style="font-size:11px;color:var(--muted);">0 = unlimited</span>
+                {% else %}
+                  <input type="text" name="feat_{{ row.feature.slug }}" value="{{ row.value }}"
+                    style="width:140px;padding:6px 10px;background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-xs);color:var(--text);font-size:13px;outline:none;" placeholder="{{ row.feature.default_value }}">
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="save-bar" style="margin-top:14px;">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Save feature settings
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if plan %}
+    <div class="panel" style="border-color:rgba(220,38,38,.2);">
+      <div class="panel-header" style="border-bottom-color:rgba(220,38,38,.15);">
+        <span class="panel-title" style="color:#f87171;">Delete Plan</span>
+      </div>
+      <div class="panel-body">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">
+          Permanently removes this plan definition.
+          {% if sub_count %}<strong style="color:#fbbf24;">{{ sub_count }} subscriber{{ sub_count|pluralize }} will lose their plan link</strong> (their plan_slug is kept).{% endif %}
+        </p>
+        <form method="post" onsubmit="return confirm('Delete plan {{ plan.name }}? This cannot be undone.');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="delete">
+          <button type="submit" class="btn btn-danger btn-sm">
+            <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Delete {{ plan.name }}
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+(function(){
+  function $n(name){return document.querySelector('[name="'+name+'"]')}
+  function $i(id){return document.getElementById(id)}
+
+  function live(fname, targetId, fn){
+    var el=$n(fname); if(!el) return;
+    el.addEventListener('input',function(){var t=$i(targetId);if(t)t.textContent=fn?fn(this.value):this.value||'';});
+  }
+
+  live('name','prev-name');
+  live('price_label','prev-plabel');
+  live('description','prev-desc');
+  live('cta_label','prev-cta');
+
+  var priceEl=$n('price');
+  if(priceEl) priceEl.addEventListener('input',function(){
+    var t=$i('prev-price');
+    if(!t) return;
+    t.textContent = (this.value==='0'||this.value==='') ? '$0' : '$'+this.value;
+    t.style.color = (this.value==='0'||!this.value) ? 'var(--text)' : 'var(--orange)';
+  });
+
+  var featEl=$n('features');
+  if(featEl) featEl.addEventListener('input',function(){
+    var ul=$i('prev-features'); if(!ul) return;
+    var lines=this.value.split('\n').filter(function(l){return l.trim();});
+    ul.innerHTML=lines.map(function(l){
+      return '<li style="display:flex;align-items:center;gap:7px;"><span style="width:12px;height:12px;border-radius:50%;background:var(--olo);border:1px solid var(--omid);flex-shrink:0;"></span>'+l.trim()+'</li>';
+    }).join('');
+  });
+
+  var chk=$n('is_featured');
+  if(chk) chk.addEventListener('change',function(){
+    var b=$i('prev-featured-badge');
+    var box=$i('plan-preview');
+    if(b) b.style.display=this.checked?'':'none';
+    if(box) box.style.borderColor=this.checked?'rgba(255,77,0,.4)':'var(--border)';
+  });
+})();
+</script>
+{% endblock %}

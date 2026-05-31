@@ -1,0 +1,896 @@
+{% extends "base.html" %}
+
+{% block title %}{{ site_settings.site_name|default:"AEiViON" }} — Your link, your identity{% endblock %}
+
+{% block nav_actions %}
+<a class="btn btn-ghost" href="{% url 'login' %}">Log in</a>
+<a class="btn btn-primary" href="{% url 'signup' %}">Get started free</a>
+{% endblock %}
+
+{% block bottom_menu %}{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ====================================================================
+   HOME PAGE — 3D ANIMATED + SCROLL REVEALS
+   ==================================================================== */
+
+body { padding-bottom: 0; }
+
+/* ── Canvas & 3D scene backdrop ── */
+#hero-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+}
+
+/* Dot-grid overlay */
+.home-grid-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(circle, rgba(255,255,255,.055) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Noise grain */
+.home-grain {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: .03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  pointer-events: none;
+}
+
+/* ====================================================================
+   HERO
+   ==================================================================== */
+
+.hero {
+  min-height: calc(100dvh - 60px);
+  display: flex;
+  align-items: center;
+  padding-block: clamp(60px, 10vw, 100px);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(32px, 5vw, 64px);
+  align-items: center;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-inline: clamp(20px, 5vw, 40px);
+}
+
+@media (max-width: 860px) {
+  .hero-inner { grid-template-columns: 1fr; text-align: center; }
+  .hero-cta, .hero-chips { justify-content: center; }
+  .hero-visual { order: -1; }
+}
+
+/* Eyebrow pill */
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 6px;
+  border-radius: 20px;
+  background: rgba(255,77,0,.1);
+  border: 1px solid rgba(255,77,0,.25);
+  font-size: 12px; font-weight: 600; color: #ff8050;
+  letter-spacing: .02em; margin-bottom: 22px;
+}
+
+.hero-eyebrow-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+}
+.hero-eyebrow-dot svg { width: 10px; height: 10px; stroke: #fff; fill: none; stroke-width: 2.5; }
+
+/* Headline */
+.hero-headline {
+  font-size: clamp(36px, 6vw, 68px);
+  font-weight: 800;
+  letter-spacing: clamp(-1.5px, -0.03em, -2.5px);
+  line-height: 1.06;
+  margin-bottom: 20px;
+}
+
+.hero-headline .line-muted {
+  background: linear-gradient(90deg, rgba(255,255,255,.95), rgba(255,255,255,.35));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  display: block;
+}
+
+.hero-headline .line-accent {
+  background: linear-gradient(100deg, #ff6a2f 0%, #ff9a60 55%, #60a5fa 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  display: block;
+}
+
+.hero-sub {
+  font-size: clamp(15px, 2vw, 17px); color: var(--muted);
+  line-height: 1.7; max-width: 420px; margin-bottom: 32px;
+}
+@media (max-width: 860px) { .hero-sub { margin-inline: auto; } }
+
+/* CTA */
+.hero-cta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
+
+.hero-cta-note { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.hero-cta-note svg { width: 12px; height: 12px; stroke: #22c55e; fill: none; stroke-width: 2.5; }
+
+/* Chips */
+.hero-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hero-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px; border-radius: 20px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  font-size: 12px; font-weight: 500; color: rgba(255,255,255,.55);
+}
+.hero-chip svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+
+/* ── 3D Phone Mockup ── */
+.hero-visual { display: flex; align-items: center; justify-content: center; position: relative; }
+
+.phone-scene {
+  perspective: 1200px;
+  perspective-origin: 50% 40%;
+}
+
+.phone-wrap {
+  position: relative;
+  animation: phone3dFloat 6s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes phone3dFloat {
+  0%   { transform: rotateY(-8deg) rotateX(4deg) translateY(0px); }
+  25%  { transform: rotateY(-4deg) rotateX(6deg) translateY(-10px); }
+  50%  { transform: rotateY(0deg)  rotateX(3deg) translateY(-14px); }
+  75%  { transform: rotateY(4deg)  rotateX(5deg) translateY(-8px); }
+  100% { transform: rotateY(-8deg) rotateX(4deg) translateY(0px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-wrap { animation: none; transform: rotateY(-8deg) rotateX(4deg); }
+}
+
+.phone-frame {
+  width: clamp(200px, 28vw, 270px);
+  border-radius: 36px;
+  background: rgba(12,12,18,0.95);
+  border: 1.5px solid rgba(255,255,255,.14);
+  padding: 16px 12px;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.04),
+    0 40px 80px rgba(0,0,0,.85),
+    0 0 100px rgba(255,77,0,.12),
+    -20px 20px 40px rgba(0,0,0,.4);
+  position: relative; overflow: hidden;
+  transform-style: preserve-3d;
+}
+
+/* Screen glare */
+.phone-frame::before {
+  content: "";
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+}
+
+/* Side edge glow */
+.phone-frame::after {
+  content: "";
+  position: absolute; top: 10%; bottom: 10%; left: -1px; width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(255,150,80,.4), transparent);
+}
+
+.phone-notch {
+  width: 60px; height: 6px; border-radius: 3px;
+  background: rgba(255,255,255,.07); margin: 0 auto 16px;
+}
+
+.phone-screen { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 4px 0 8px; }
+
+.phone-avatar {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #ff4d00);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: #fff;
+  border: 2px solid rgba(255,255,255,.12);
+  box-shadow: 0 0 20px rgba(255,77,0,.25);
+}
+
+.phone-name  { font-size: 13px; font-weight: 700; letter-spacing: -.2px; color: #fff; }
+.phone-handle { font-size: 10px; color: rgba(255,100,40,.8); font-weight: 500; margin-top: -6px; }
+.phone-bio { font-size: 9.5px; color: rgba(255,255,255,.4); text-align: center; line-height: 1.5; padding: 0 8px; }
+.phone-divider { width: 30px; height: 1px; background: rgba(255,255,255,.08); }
+
+.phone-link {
+  width: 100%; padding: 9px 12px; border-radius: 10px;
+  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.07);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 10px; font-weight: 600; color: rgba(255,255,255,.85);
+  transition: background .2s;
+}
+.phone-link-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.phone-link:nth-child(1) .phone-link-dot { background: var(--orange); }
+.phone-link:nth-child(2) .phone-link-dot { background: #60a5fa; }
+.phone-link:nth-child(3) .phone-link-dot { background: #a78bfa; }
+
+/* Floating badges */
+.phone-badge {
+  position: absolute;
+  background: rgba(12,12,18,.96);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 12px; padding: 8px 12px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.6);
+  white-space: nowrap;
+  animation: badge-float 4s ease-in-out infinite;
+  backdrop-filter: blur(12px);
+}
+.phone-badge svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.phone-badge-1 { top: 10%; right: -32%; color: #4ade80; animation-delay: 0s; }
+.phone-badge-2 { bottom: 22%; left: -38%; color: #60a5fa; animation-delay: 1.5s; }
+
+@media (max-width: 860px) {
+  .phone-badge-1 { right: -8%; }
+  .phone-badge-2 { left: -8%; }
+}
+
+@keyframes badge-float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-7px) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) { .phone-badge { animation: none; } }
+
+/* ====================================================================
+   MARQUEE
+   ==================================================================== */
+
+.marquee-section {
+  padding-block: clamp(20px,3vw,32px);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  overflow: hidden; position: relative;
+}
+
+.marquee-label {
+  text-align: center; font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: rgba(255,255,255,.18); margin-bottom: 18px;
+}
+
+.marquee-track {
+  display: flex; gap: 48px;
+  animation: marquee-scroll 22s linear infinite;
+  width: max-content;
+}
+@keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .marquee-track { animation: none; } }
+
+.marquee-item {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  color: rgba(255,255,255,.22); white-space: nowrap; letter-spacing: -.1px;
+}
+.marquee-item svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; opacity: .5; }
+
+/* ====================================================================
+   FEATURES
+   ==================================================================== */
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(12px, 2vw, 20px);
+}
+@media (max-width: 800px) { .features-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 500px) { .features-grid { grid-template-columns: 1fr; } }
+
+.feature-card {
+  padding: clamp(20px,3vw,28px); border-radius: var(--r-lg);
+  background: var(--surface); border: 1px solid var(--border);
+  position: relative; overflow: hidden;
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover { transform: translateY(-4px); border-color: var(--border-hi); box-shadow: 0 20px 48px rgba(0,0,0,.5); }
+  .feature-card:hover::before { opacity: .22; }
+}
+.feature-card::before {
+  content: ""; position: absolute; top: -40px; left: 50%; transform: translateX(-50%);
+  width: 120px; height: 80px; border-radius: 50%;
+  background: var(--glow-color, var(--orange)); filter: blur(30px);
+  opacity: 0; transition: opacity .3s;
+}
+.feature-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px; flex-shrink: 0;
+}
+.feature-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.fi-orange { background: rgba(255,77,0,.12); border: 1px solid rgba(255,77,0,.2); color: #ff7040; --glow-color: var(--orange); }
+.fi-blue   { background: rgba(37,99,235,.12); border: 1px solid rgba(37,99,235,.2); color: #60a5fa; --glow-color: var(--blue); }
+.fi-green  { background: rgba(34,197,94,.1);  border: 1px solid rgba(34,197,94,.2);  color: #4ade80; --glow-color: #22c55e; }
+.fi-purple { background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2); color: #a78bfa; --glow-color: #7c3aed; }
+.fi-pink   { background: rgba(236,72,153,.1); border: 1px solid rgba(236,72,153,.2); color: #f472b6; --glow-color: #db2777; }
+.fi-yellow { background: rgba(234,179,8,.1);  border: 1px solid rgba(234,179,8,.2);  color: #facc15; --glow-color: #ca8a04; }
+.feature-title { font-size: 15px; font-weight: 700; letter-spacing: -.15px; margin-bottom: 8px; }
+.feature-desc  { font-size: 13.5px; color: var(--muted); line-height: 1.65; }
+
+/* ====================================================================
+   HOW IT WORKS
+   ==================================================================== */
+
+.steps-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; position: relative;
+}
+.steps-grid::before {
+  content: ""; position: absolute;
+  top: 28px; left: calc(16.66% + 20px); right: calc(16.66% + 20px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,77,0,.3) 20%, rgba(255,77,0,.3) 80%, transparent 100%);
+}
+@media (max-width: 640px) { .steps-grid { grid-template-columns: 1fr; gap: 24px; } .steps-grid::before { display: none; } }
+
+.step { display: flex; flex-direction: column; align-items: center; text-align: center; padding: clamp(16px,3vw,28px) clamp(12px,2vw,24px); }
+.step-num {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(255,77,0,.08); border: 1px solid rgba(255,77,0,.2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700; color: var(--orange);
+  margin-bottom: 18px; position: relative; z-index: 1; flex-shrink: 0;
+}
+.step-num::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 1px solid rgba(255,77,0,.1); }
+.step-title { font-size: 16px; font-weight: 700; letter-spacing: -.2px; margin-bottom: 8px; }
+.step-desc  { font-size: 13.5px; color: var(--muted); line-height: 1.65; max-width: 240px; }
+
+/* ====================================================================
+   PRICING
+   ==================================================================== */
+
+.pricing-cards {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: clamp(12px, 2vw, 18px); align-items: start;
+}
+@media (max-width: 860px) { .pricing-cards { grid-template-columns: 1fr; max-width: 400px; margin-inline: auto; } }
+
+.p-card {
+  border-radius: var(--r-lg); padding: clamp(20px,3vw,28px);
+  position: relative; overflow: hidden; transition: transform .25s;
+}
+@media (hover: hover) and (pointer: fine) { .p-card:hover { transform: translateY(-4px); } }
+.p-card-default  { background: var(--surface); border: 1px solid var(--border); }
+.p-card-featured {
+  background: rgba(255,77,0,.06); border: 1px solid rgba(255,77,0,.3);
+  box-shadow: 0 0 0 1px rgba(255,77,0,.1), 0 24px 64px rgba(255,77,0,.12), inset 0 0 80px rgba(255,77,0,.04);
+}
+.p-card-featured::before {
+  content: ""; position: absolute; bottom: -80px; left: 50%; transform: translateX(-50%);
+  width: 240px; height: 240px;
+  background: radial-gradient(circle, rgba(255,77,0,.2) 0%, transparent 70%); pointer-events: none;
+}
+.p-tier { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.p-tier-name { font-size: 13px; font-weight: 700; letter-spacing: -.1px; }
+.p-price { font-size: clamp(32px,5vw,42px); font-weight: 700; letter-spacing: -2px; line-height: 1; margin: 10px 0 3px; }
+.p-price-orange { color: var(--orange); }
+.p-period { font-size: 14px; color: var(--muted); font-weight: 400; margin-bottom: 4px; }
+.p-desc   { font-size: 12.5px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.p-features { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 22px; }
+.p-features li { display: flex; align-items: center; gap: 9px; font-size: 13px; color: rgba(255,255,255,.78); }
+.p-features li::before {
+  content: ""; width: 16px; height: 16px; flex-shrink: 0; border-radius: 50%;
+  background: rgba(255,77,0,.12) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23ff4d00' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E") no-repeat center / 10px;
+  border: 1px solid rgba(255,77,0,.25);
+}
+
+/* ====================================================================
+   TESTIMONIALS
+   ==================================================================== */
+
+.t-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); overflow: hidden;
+  display: grid; grid-template-columns: 160px 1fr;
+}
+@media (max-width: 600px) { .t-card { grid-template-columns: 1fr; } }
+
+.t-sidebar {
+  background: rgba(255,77,0,.07); border-right: 1px solid rgba(255,77,0,.12);
+  padding: 28px 20px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 7px;
+}
+@media (max-width: 600px) {
+  .t-sidebar { flex-direction: row; flex-wrap: wrap; border-right: none; border-bottom: 1px solid rgba(255,77,0,.12); padding: 14px 20px; gap: 12px; }
+}
+.t-score { font-size: 38px; font-weight: 700; line-height: 1; }
+.t-stars { display: flex; gap: 3px; }
+.t-star  { width: 12px; height: 12px; background: #ff7a30; clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+.t-count { font-size: 11px; color: var(--muted); }
+.t-note  { font-size: 11px; color: var(--muted); text-align: center; }
+.t-body  { padding: clamp(18px,3vw,28px); background: rgba(255,255,255,.02); }
+.t-platform { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.t-platform-icon { width: 26px; height: 26px; border-radius: 8px; background: var(--surface-hi); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; }
+.t-platform-icon svg { width: 13px; height: 13px; stroke: var(--text); fill: none; stroke-width: 2; }
+.t-platform-name { font-size: 13px; font-weight: 600; }
+.t-stars-small { display: flex; gap: 2px; margin-left: auto; }
+.t-star-sm { width: 10px; height: 10px; background: #ff7a30; clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); }
+.t-quote { font-size: 14px; color: rgba(255,255,255,.72); line-height: 1.72; font-style: italic; margin-bottom: 18px; }
+.t-author { display: flex; align-items: center; gap: 10px; }
+.t-avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, var(--orange), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.t-author-name { font-size: 13px; font-weight: 600; }
+.t-author-role { font-size: 11px; color: var(--muted); }
+
+/* ====================================================================
+   BOTTOM CTA BAND
+   ==================================================================== */
+
+.cta-band {
+  padding-block: clamp(60px,8vw,100px); text-align: center;
+  position: relative; overflow: hidden;
+}
+.cta-band::before {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(300px,60vw,700px); height: clamp(300px,60vw,700px);
+  background: radial-gradient(circle, rgba(255,77,0,.12) 0%, transparent 65%);
+  pointer-events: none; filter: blur(60px);
+}
+.cta-band h2 { font-size: clamp(26px,5vw,48px); font-weight: 700; letter-spacing: -.6px; margin-bottom: 14px; position: relative; }
+.cta-band p  { font-size: clamp(14px,2vw,16px); color: var(--muted); margin-bottom: 32px; position: relative; }
+.cta-actions { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; }
+
+/* ====================================================================
+   SCROLL ANIMATION VARIANTS
+   ==================================================================== */
+
+.fade-up    { opacity: 0; transform: translateY(32px); transition: opacity .7s ease, transform .7s ease; }
+.fade-left  { opacity: 0; transform: translateX(-28px); transition: opacity .7s ease, transform .7s ease; }
+.fade-right { opacity: 0; transform: translateX(28px); transition: opacity .7s ease, transform .7s ease; }
+.fade-scale { opacity: 0; transform: scale(.94); transition: opacity .6s ease, transform .6s ease; }
+
+.fade-up.visible, .fade-left.visible, .fade-right.visible, .fade-scale.visible {
+  opacity: 1; transform: none;
+}
+
+.d1 { transition-delay: .06s; }
+.d2 { transition-delay: .12s; }
+.d3 { transition-delay: .18s; }
+.d4 { transition-delay: .24s; }
+.d5 { transition-delay: .30s; }
+.d6 { transition-delay: .36s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up, .fade-left, .fade-right, .fade-scale { opacity: 1 !important; transform: none !important; }
+}
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<!-- Background layers -->
+<canvas id="hero-canvas" aria-hidden="true"></canvas>
+<div class="home-grid-bg" aria-hidden="true"></div>
+<div class="home-grain" aria-hidden="true"></div>
+
+<!-- ================================================================
+     HERO
+     ================================================================ -->
+
+<section class="hero" aria-label="Hero">
+  <div class="hero-inner">
+
+    <!-- Copy -->
+    <div class="hero-copy">
+      <div class="hero-eyebrow fade-up">
+        <span class="hero-eyebrow-dot">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="13 2 13 9 20 9"/><polyline points="11 22 11 15 4 15"/><path d="M3 3l18 18"/></svg>
+        </span>
+        Free &amp; open-source forever
+      </div>
+
+      <h1 class="hero-headline fade-up d1">
+        <span class="line-muted">One link for</span>
+        <span class="line-accent">everything you make.</span>
+      </h1>
+
+      <p class="hero-sub fade-up d2">
+        AEiViON gives creators a beautiful, fast link-in-bio page —
+        no monthly fees, no lock-in, yours to host and own.
+      </p>
+
+      <div class="hero-cta fade-up d3">
+        <a class="btn btn-primary" href="{% url 'signup' %}" style="padding:12px 28px;font-size:15px;">
+          Create your page
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noopener" style="font-size:14px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          View source
+        </a>
+        <span class="hero-cta-note">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>
+          No credit card
+        </span>
+      </div>
+
+      <div class="hero-chips fade-up d3">
+        <span class="hero-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Free forever</span>
+        <span class="hero-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Open source</span>
+        <span class="hero-chip"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Custom domain ready</span>
+      </div>
+    </div>
+
+    <!-- 3D Phone mockup -->
+    <div class="hero-visual fade-right d2">
+      <div class="phone-scene">
+        <div class="phone-wrap">
+
+          <div class="phone-badge phone-badge-1">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            1.2k views today
+          </div>
+
+          <div class="phone-badge phone-badge-2">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            8 links active
+          </div>
+
+          <div class="phone-frame">
+            <div class="phone-notch"></div>
+            <div class="phone-screen">
+              <div class="phone-avatar" aria-hidden="true">A</div>
+              <p class="phone-name">Alex Rivera</p>
+              <p class="phone-handle">/@alexrivera</p>
+              <p class="phone-bio">Designer · Writer · Building cool stuff</p>
+              <div class="phone-divider"></div>
+              <div class="phone-link"><span class="phone-link-dot"></span>My Portfolio</div>
+              <div class="phone-link"><span class="phone-link-dot"></span>Latest Article</div>
+              <div class="phone-link"><span class="phone-link-dot"></span>YouTube Channel</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ================================================================
+     MARQUEE
+     ================================================================ -->
+
+<div class="marquee-section" aria-hidden="true">
+  <p class="marquee-label">Trusted by creators everywhere</p>
+  <div style="overflow:hidden;">
+    <div class="marquee-track">
+      {% for item in "12345678"|make_list %}
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Designers</span>
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>Developers</span>
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><path d="M15 10l4.553-2.069A1 1 0 0 1 21 8.82v6.36a1 1 0 0 1-1.447.89L15 14M3 8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z"/></svg>Creators</span>
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>Writers</span>
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><path d="M9 19V6l12-3v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="15" r="3"/></svg>Musicians</span>
+      <span class="marquee-item"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Freelancers</span>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ================================================================
+     FEATURES
+     ================================================================ -->
+
+<section class="section" aria-labelledby="features-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-label"><span class="badge badge-orange">Features</span></span>
+      <h2 id="features-heading">Everything you need. Nothing you don't.</h2>
+      <p class="text-muted mt-8" style="max-width:440px;margin-inline:auto;">Built lean and purposeful — every feature earns its place.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card fade-up d1">
+        <div class="feature-icon fi-orange"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+        <h3 class="feature-title">Unlimited links</h3>
+        <p class="feature-desc">Add as many links as you want. No tiers, no caps — it's your page.</p>
+      </div>
+      <div class="feature-card fade-up d2">
+        <div class="feature-icon fi-blue"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <h3 class="feature-title">Beautiful on any screen</h3>
+        <p class="feature-desc">Pixel-perfect on mobile, tablet, and desktop — no pinching required.</p>
+      </div>
+      <div class="feature-card fade-up d3">
+        <div class="feature-icon fi-green"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        <h3 class="feature-title">Analytics</h3>
+        <p class="feature-desc">See which links get clicked, where visitors come from, and when they show up.</p>
+      </div>
+      <div class="feature-card fade-up d1">
+        <div class="feature-icon fi-purple"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+        <h3 class="feature-title">Custom domain</h3>
+        <p class="feature-desc">Point your own domain at your page. Your brand, your URL, fully yours.</p>
+      </div>
+      <div class="feature-card fade-up d2">
+        <div class="feature-icon fi-pink"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+        <h3 class="feature-title">Social links</h3>
+        <p class="feature-desc">GitHub, Twitter, Instagram and more — displayed as clean, tappable icons.</p>
+      </div>
+      <div class="feature-card fade-up d3">
+        <div class="feature-icon fi-yellow"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3 class="feature-title">Open source</h3>
+        <p class="feature-desc">Read the code, fork it, self-host it. No black boxes, no surprises.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     HOW IT WORKS
+     ================================================================ -->
+
+<section class="section" aria-labelledby="how-heading" style="background:rgba(255,255,255,.015);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-label"><span class="badge badge-muted">How it works</span></span>
+      <h2 id="how-heading">Up and running in 60 seconds.</h2>
+    </div>
+    <div class="steps-grid">
+      <div class="step fade-up d1"><div class="step-num">1</div><h3 class="step-title">Create an account</h3><p class="step-desc">Sign up free — no credit card, no email-list opt-in.</p></div>
+      <div class="step fade-up d2"><div class="step-num">2</div><h3 class="step-title">Add your links</h3><p class="step-desc">Paste URLs, write titles, drag to reorder. Done in under a minute.</p></div>
+      <div class="step fade-up d3"><div class="step-num">3</div><h3 class="step-title">Share your page</h3><p class="step-desc">Drop <strong style="color:rgba(255,255,255,.8);">aeiviOn.app/@you</strong> in every bio.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PRICING
+     ================================================================ -->
+
+<section class="section" aria-labelledby="pricing-heading">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-label"><span class="badge badge-orange">Pricing</span></span>
+      <h2 id="pricing-heading">Simple, transparent pricing.</h2>
+      <p class="text-muted mt-8" style="max-width:380px;margin-inline:auto;">Start free, scale as you grow. No hidden fees.</p>
+    </div>
+
+    <div class="pricing-cards">
+
+      {% for plan in plans %}
+      <div class="p-card {% if plan.is_featured %}p-card-featured fade-scale{% else %}p-card-default fade-up{% endif %} d{{ forloop.counter }}">
+        <div class="p-tier">
+          <span class="p-tier-name">{{ plan.name }}</span>
+          {% if plan.is_featured %}<span class="badge badge-orange">Popular</span>{% endif %}
+        </div>
+        <p class="p-price {% if plan.is_featured %}p-price-orange{% endif %}">{% if plan.price == 0 %}$0{% else %}${{ plan.price|floatformat:"-2" }}{% endif %}</p>
+        <p class="p-period">{{ plan.price_label }}</p>
+        <p class="p-desc">{{ plan.description }}</p>
+        <ul class="p-features">
+          {% for feat in plan.features_list %}<li>{{ feat }}</li>{% endfor %}
+        </ul>
+        <a class="btn {% if plan.is_featured %}btn-primary{% else %}btn-ghost{% endif %} btn-full"
+           href="{% url 'signup' %}">{{ plan.cta_label|default:"Get started" }}</a>
+      </div>
+      {% empty %}
+      <div class="p-card p-card-default fade-up d1">
+        <div class="p-tier"><span class="p-tier-name">Free</span></div>
+        <p class="p-price">$0</p><p class="p-period">/month</p>
+        <p class="p-desc">Everything you need to get started.</p>
+        <ul class="p-features"><li>Unlimited links</li><li>Custom bio &amp; avatar</li><li>Public profile</li></ul>
+        <a class="btn btn-ghost btn-full" href="{% url 'signup' %}">Sign up free</a>
+      </div>
+      {% endfor %}
+
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     TESTIMONIALS
+     ================================================================ -->
+
+<section class="section" aria-labelledby="testimonials-heading" style="border-top:1px solid var(--border);">
+  <div class="container">
+    <div class="section-header fade-up">
+      <span class="section-label"><span class="badge badge-muted">Testimonials</span></span>
+      <h2 id="testimonials-heading">Loved by people who get things done.</h2>
+    </div>
+
+    <div class="t-card fade-up d1">
+      <div class="t-sidebar">
+        <span class="t-score">4.9</span>
+        <div class="t-stars"><span class="t-star"></span><span class="t-star"></span><span class="t-star"></span><span class="t-star"></span><span class="t-star"></span></div>
+        <span class="t-count">120+ reviews</span>
+        <span class="t-note">Creator experiences<br>that speak for themselves</span>
+      </div>
+      <div class="t-body">
+        <div class="t-platform">
+          <div class="t-platform-icon"><svg viewBox="0 0 24 24"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg></div>
+          <span class="t-platform-name">Twitter / X</span>
+          <div class="t-stars-small"><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span></div>
+        </div>
+        <p class="t-quote">"Switched from a paid link-in-bio tool and genuinely can't believe the difference. Faster, cleaner, and it's free — I actually own my page now."</p>
+        <div class="t-author">
+          <div class="t-avatar" aria-hidden="true">S</div>
+          <div><p class="t-author-name">Sarah M.</p><p class="t-author-role">UX Designer &amp; Indie Hacker</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:clamp(12px,2vw,20px);margin-top:clamp(12px,2vw,20px);">
+      <div class="glass fade-up d2" style="padding:clamp(16px,2.5vw,24px);">
+        <div class="t-stars-small" style="margin-bottom:12px;"><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span></div>
+        <p class="t-quote" style="margin-bottom:14px;">"Set up my page in five minutes. Every client I send there says it looks slick."</p>
+        <div class="t-author">
+          <div class="t-avatar" style="background:linear-gradient(135deg,#7c3aed,#2563eb);" aria-hidden="true">J</div>
+          <div><p class="t-author-name">James K.</p><p class="t-author-role">Freelance Developer</p></div>
+        </div>
+      </div>
+      <div class="glass fade-up d3" style="padding:clamp(16px,2.5vw,24px);">
+        <div class="t-stars-small" style="margin-bottom:12px;"><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span><span class="t-star-sm"></span></div>
+        <p class="t-quote" style="margin-bottom:14px;">"Open source and this polished? I forked it and had my own instance running on my domain in an afternoon."</p>
+        <div class="t-author">
+          <div class="t-avatar" style="background:linear-gradient(135deg,#db2777,#ff4d00);" aria-hidden="true">P</div>
+          <div><p class="t-author-name">Priya T.</p><p class="t-author-role">Backend Engineer</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     BOTTOM CTA
+     ================================================================ -->
+
+<section class="cta-band fade-up" aria-labelledby="cta-heading">
+  <div class="container">
+    <h2 id="cta-heading">Your link. Your identity.<br>No monthly bill.</h2>
+    <p>Join thousands of creators who made the switch.</p>
+    <div class="cta-actions">
+      <a class="btn btn-primary" href="{% url 'signup' %}" style="padding:13px 32px;font-size:15px;">
+        Create your free page
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="https://github.com/" target="_blank" rel="noopener">Star on GitHub</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+
+{% block footer %}
+<footer role="contentinfo">
+  <div class="container-wide">
+    <div class="social-strip">
+      <a class="social-strip-item" href="#" target="_blank" rel="noopener noreferrer">YouTube<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>
+      <a class="social-strip-item" href="#" target="_blank" rel="noopener noreferrer">Twitter / X<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>
+      <a class="social-strip-item" href="#" target="_blank" rel="noopener noreferrer">Instagram<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>
+      <a class="social-strip-item" href="#" target="_blank" rel="noopener noreferrer">GitHub<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></a>
+    </div>
+  </div>
+  <div class="footer-inner" style="max-width:1080px;padding-block:28px 20px;">
+    <div>
+      <a class="logo" href="/" style="font-size:16px;">AEiViON</a>
+      <p style="font-size:12px;color:var(--muted);margin-top:6px;">Free &amp; open-source link-in-bio for creators.</p>
+    </div>
+    <nav class="footer-links">
+      <a href="/privacy/">Privacy</a>
+      <a href="/terms/">Terms</a>
+      <a href="https://github.com/" target="_blank" rel="noopener">GitHub</a>
+      <a href="{% url 'login' %}">Log in</a>
+      <a href="{% url 'signup' %}">Sign up</a>
+    </nav>
+  </div>
+  <div style="border-top:1px solid var(--border);padding:14px 0;text-align:center;">
+    <p style="font-size:12px;color:rgba(255,255,255,.16);">© {% now "Y" %} {{ site_settings.site_name|default:"AEiViON" }} · {{ site_settings.footer_text|default:"Built with ♥ for creators · Open source under MIT" }}</p>
+  </div>
+</footer>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function () {
+
+  /* ── 3D Particle canvas ── */
+  const canvas = document.getElementById('hero-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, particles = [], raf;
+
+  const COLORS = ['rgba(255,77,0,', 'rgba(37,99,235,', 'rgba(96,165,250,'];
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function mkParticle() {
+    return {
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.6 + 0.4,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      col: COLORS[Math.floor(Math.random() * COLORS.length)],
+      a: Math.random() * 0.4 + 0.06,
+    };
+  }
+
+  function init() {
+    resize();
+    particles = Array.from({ length: 90 }, mkParticle);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+      if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.col + p.a + ')';
+      ctx.fill();
+    });
+
+    /* Connect nearby particles */
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x;
+        const dy = particles[i].y - particles[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 120) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = 'rgba(255,255,255,' + (0.03 * (1 - dist / 120)) + ')';
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    raf = requestAnimationFrame(draw);
+  }
+
+  /* Respect prefers-reduced-motion */
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    init();
+    draw();
+    window.addEventListener('resize', () => { resize(); });
+  }
+
+  /* ── Scroll reveal (multi-direction) ── */
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        requestAnimationFrame(() => e.target.classList.add('visible'));
+      }
+    });
+  }, { threshold: 0.07, rootMargin: '0px 0px -28px 0px' });
+
+  document.querySelectorAll('.fade-up, .fade-left, .fade-right, .fade-scale, .fade').forEach(el => io.observe(el));
+
+  /* Also handle legacy .fade class */
+  document.querySelectorAll('.fade').forEach(el => {
+    el.classList.add('fade-up');
+    io.observe(el);
+  });
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "siteadmin/base.html" %}
+{% block title %}{{ action }} Feature{% endblock %}
+{% block page_title %}{{ action }} Feature{% endblock %}
+{% block nav_plans %}active{% endblock %}
+{% block mnav_plans %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.field input,.field select,.field textarea{width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r-sm);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;transition:border-color .2s;appearance:none;min-height:42px;margin-bottom:0}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:color-mix(in srgb,var(--ac) 60%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 10%,transparent)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <a href="{% url 'admin_plan_list' %}">Plans</a>
+  <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  <a href="{% url 'admin_feature_list' %}">Features</a>
+  <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+  <span>{{ action }}{% if feat %}: {{ feat.name }}{% endif %}</span>
+</div>
+<div style="max-width:560px;">
+  <div class="panel">
+    <div class="panel-header"><span class="panel-title">{{ action }} Feature</span></div>
+    <div class="panel-body">
+      <form method="post">{% csrf_token %}
+        <div class="form-grid">
+          <div class="field"><label class="field-label">Feature name *</label>{{ form.name }}</div>
+          <div class="field"><label class="field-label">Slug *</label>{{ form.slug }}<p class="field-hint">Unique code identifier. Cannot change after creation.</p></div>
+        </div>
+        <div class="field"><label class="field-label">Description</label>{{ form.description }}</div>
+        <div class="form-grid">
+          <div class="field"><label class="field-label">Feature type</label>{{ form.feature_type }}</div>
+          <div class="field"><label class="field-label">Default value</label>{{ form.default_value }}<p class="field-hint">Used when a plan has no explicit setting.</p></div>
+        </div>
+        <div class="field"><label class="field-label">Choices list <span style="color:var(--muted);font-size:11px;">(choices type only)</span></label>{{ form.choices_list }}<p class="field-hint">Comma-separated, e.g. minimal,glass,neon</p></div>
+        <div class="field"><label class="field-label">Display order</label>{{ form.order }}</div>
+        {% if form.errors %}<div class="alert alert-error"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>{{ form.errors }}</div>{% endif %}
+        <div class="save-bar">
+          <button type="submit" class="btn btn-primary btn-sm"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>Save feature</button>
+          <a href="{% url 'admin_feature_list' %}" class="btn btn-ghost btn-sm">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% if feat %}
+  <div class="panel" style="border-color:rgba(220,38,38,.2);">
+    <div class="panel-header" style="border-bottom-color:rgba(220,38,38,.15);"><span class="panel-title" style="color:#f87171;">Delete Feature</span></div>
+    <div class="panel-body">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Removes this feature from all plans permanently.</p>
+      <form method="post" onsubmit="return confirm('Delete feature {{ feat.name }}?');">{% csrf_token %}
+        <input type="hidden" name="action" value="delete">
+        <button type="submit" class="btn btn-danger btn-sm"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Delete</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

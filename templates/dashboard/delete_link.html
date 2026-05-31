@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Link{% endblock %}
+
+{% block content %}
+
+<div class="container" style="padding-block: clamp(28px, 5vw, 48px);">
+  <div class="glass fade" style="max-width: 520px; margin-inline: auto;">
+
+    <h1 style="font-size: clamp(18px, 3vw, 24px); font-weight: 700; margin-bottom: 12px;">Delete Link</h1>
+
+    <p style="color: var(--muted); margin-bottom: 24px;">
+      Are you sure you want to delete <strong style="color: var(--text);">{{ link.title }}</strong>?
+      This action cannot be undone.
+    </p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div style="display: flex; gap: 10px;">
+        <button type="submit" class="btn btn-primary" style="background: #c0392b;">
+          Yes, delete
+        </button>
+        <a class="btn btn-ghost" href="/dashboard/">Cancel</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+{% endblock %}

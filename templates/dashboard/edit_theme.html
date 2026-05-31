@@ -1,0 +1,815 @@
+{% extends "base.html" %}
+
+{% block title %}Customise Theme — AEiViON{% endblock %}
+
+{% block menu_profile %}{% endblock %}
+{% block menu_theme %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ================================================================
+   THEME CUSTOMISER PAGE
+   ================================================================ */
+
+body { padding-bottom: 0; }
+
+.theme-page { padding-block: clamp(28px, 5vw, 48px); }
+
+/* ── Page eyebrow ── */
+.page-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--orange); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 7px;
+}
+.page-eyebrow::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--orange); box-shadow: 0 0 8px rgba(255,77,0,.6); flex-shrink: 0;
+}
+
+/* ── Layout: left editor + right live preview ── */
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: clamp(14px, 2.5vw, 24px);
+  align-items: start;
+  margin-top: clamp(20px, 3vw, 32px);
+}
+@media (max-width: 960px) { .theme-grid { grid-template-columns: 1fr; } }
+
+/* ── Template selector cards ── */
+.template-section-title {
+  font-size: 12px; font-weight: 600; letter-spacing: .07em;
+  text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 14px;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+@media (max-width: 520px) { .template-grid { grid-template-columns: 1fr; } }
+
+/* Hide real radio input */
+.template-radio { display: none; }
+
+.template-card {
+  position: relative;
+  border-radius: var(--r-lg);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color .22s, box-shadow .22s, transform .22s;
+}
+@media (hover: hover) and (pointer: fine) {
+  .template-card:hover { border-color: var(--border-hi); transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,.4); }
+}
+
+/* Selected state */
+.template-radio:checked + .template-card {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px rgba(255,77,0,.3), 0 12px 36px rgba(255,77,0,.15);
+}
+
+/* Check badge */
+.template-card::after {
+  content: "✓";
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--orange); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: scale(.6);
+  transition: opacity .2s, transform .2s;
+}
+.template-radio:checked + .template-card::after { opacity: 1; transform: scale(1); }
+
+/* Template preview mini-render */
+.tp-preview {
+  height: 130px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* DEFAULT preview */
+.tp-default {
+  background: #090911;
+}
+.tp-default::before {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255,77,0,.18) 0%, transparent 65%);
+}
+.tp-default .tp-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg,#2563eb,#ff4d00); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+.tp-default .tp-name { font-size: 11px; font-weight: 700; color: #f0f0f0; }
+.tp-default .tp-link { width: 110px; height: 18px; border-radius: 5px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); }
+
+/* CLAY preview */
+.tp-clay {
+  background: #1a1030;
+}
+.tp-clay .tp-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg,#c026d3,#ff4d00); box-shadow: 4px 4px 0 rgba(0,0,0,.4); font-size: 14px; font-weight: 800; color: #fff; display: flex; align-items: center; justify-content: center; }
+.tp-clay .tp-name { font-size: 11px; font-weight: 800; color: #f0e7ff; }
+.tp-clay .tp-link { width: 110px; height: 22px; border-radius: 12px; background: rgba(255,255,255,.1); box-shadow: 3px 3px 0 rgba(0,0,0,.3); border: 2px solid rgba(255,255,255,.08); }
+
+/* MINIMAL preview */
+.tp-minimal {
+  background: #fafaf9;
+  align-items: flex-start;
+  padding: 14px 18px;
+}
+.tp-minimal .tp-avatar { width: 28px; height: 28px; border-radius: 50%; background: #111; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #fff; }
+.tp-minimal .tp-name { font-size: 11px; font-weight: 600; color: #111; }
+.tp-minimal .tp-link { width: 100%; height: 16px; background: transparent; border-bottom: 1px solid #ddd; }
+
+/* BRUTALIST preview */
+.tp-brutalist {
+  background: #fff;
+}
+.tp-brutalist .tp-avatar { width: 38px; height: 38px; background: #ff4d00; border: 2px solid #111; box-shadow: 3px 3px 0 #111; font-size: 14px; font-weight: 900; color: #fff; display: flex; align-items: center; justify-content: center; }
+.tp-brutalist .tp-name { font-size: 11px; font-weight: 900; color: #111; text-transform: uppercase; letter-spacing: .04em; text-shadow: 2px 2px 0 #ff4d00; }
+.tp-brutalist .tp-link { width: 110px; height: 22px; border: 2px solid #111; box-shadow: 3px 3px 0 #ff4d00; background: #fff; }
+
+/* Template name label */
+.tp-label {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+}
+.tp-label-name { font-size: 13px; font-weight: 600; flex: 1; }
+.tp-label-badge { font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 10px; }
+.tp-badge-popular { background: rgba(255,77,0,.15); color: #ff7040; border: 1px solid rgba(255,77,0,.25); }
+.tp-badge-new     { background: rgba(96,165,250,.15); color: #60a5fa; border: 1px solid rgba(37,99,235,.25); }
+
+/* ── Colour pickers ── */
+.color-section-title { font-size: 12px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: rgba(255,255,255,.3); margin-bottom: 14px; }
+
+.color-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 28px; }
+@media (max-width: 520px) { .color-row { grid-template-columns: 1fr; } }
+
+.color-field { display: flex; flex-direction: column; gap: 7px; }
+.color-field-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.6); }
+
+.color-swatch-row { display: flex; align-items: center; gap: 10px; }
+
+.color-input-wrap {
+  position: relative;
+  flex: 1;
+  height: 44px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .2s, box-shadow .2s;
+}
+.color-input-wrap:hover { border-color: var(--border-hi); }
+.color-input-wrap:focus-within { border-color: rgba(255,77,0,.4); box-shadow: 0 0 0 3px rgba(255,77,0,.08); }
+
+input[type="color"] {
+  position: absolute; inset: -4px;
+  width: calc(100% + 8px); height: calc(100% + 8px);
+  border: none; padding: 0; margin: 0;
+  cursor: pointer; background: none;
+  opacity: 1;
+}
+
+.color-hex-input {
+  width: 80px; padding: 0 10px; height: 44px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-sm); color: #fff; font-size: 13px;
+  font-family: 'DM Sans', sans-serif; font-weight: 500;
+  letter-spacing: .04em; text-transform: uppercase;
+  margin-bottom: 0 !important; min-height: unset !important;
+  transition: border-color .2s;
+}
+.color-hex-input:focus { border-color: rgba(255,77,0,.4); box-shadow: 0 0 0 3px rgba(255,77,0,.08); }
+
+/* Preset swatches */
+.color-presets { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.color-preset {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; transition: transform .15s, border-color .15s;
+}
+.color-preset:hover { transform: scale(1.25); border-color: rgba(255,255,255,.5); }
+
+/* ── Background image upload ── */
+.bg-upload-section { margin-bottom: 28px; }
+.bg-upload-label { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.6); margin-bottom: 10px; display: block; }
+.bg-upload-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+
+.bg-preview-thumb {
+  width: 72px; height: 72px; border-radius: var(--r-sm);
+  background: var(--surface); border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0; position: relative;
+}
+.bg-preview-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.bg-preview-thumb svg { width: 22px; height: 22px; stroke: var(--muted); fill: none; stroke-width: 1.5; }
+
+.bg-upload-info { flex: 1; }
+.bg-upload-info p { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+
+.bg-upload-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px; min-height: 34px; border-radius: var(--r-xl);
+  background: var(--surface); border: 1px solid var(--border);
+  color: rgba(255,255,255,.8); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: background .2s, border-color .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+.bg-upload-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+@media (hover: hover) { .bg-upload-btn:hover { background: var(--surface-hi); border-color: var(--border-hi); } }
+#id_bg_image { display: none; }
+
+.bg-clear-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: var(--r-sm);
+  background: none; border: 1px solid rgba(255,100,80,.3);
+  color: rgba(255,100,80,.7); font-size: 11px; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; margin-left: 4px;
+  transition: background .2s, color .2s;
+}
+.bg-clear-btn:hover { background: rgba(255,100,80,.1); color: #ff7060; }
+
+/* ── Form footer ── */
+.form-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  margin-top: 24px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.form-footer-note { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+.form-footer-note svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
+.form-footer-actions { display: flex; gap: 8px; }
+
+/* ================================================================
+   LIVE PREVIEW PANEL
+   ================================================================ */
+
+.preview-sticky { position: sticky; top: calc(var(--nav-h) + 16px); }
+.preview-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.25); margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.preview-device-toggle { display: flex; gap: 4px; }
+.preview-device-btn { width: 28px; height: 28px; border-radius: 7px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .2s, color .2s; font-family: inherit; }
+.preview-device-btn.active { background: var(--orange-lo); border-color: rgba(255,77,0,.3); color: #ff7040; }
+.preview-device-btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+/* Preview frame */
+.preview-frame-wrap { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--border); background: #000; }
+.preview-frame-phone { max-height: 540px; overflow: hidden; border-radius: var(--r-lg); }
+.preview-frame-desktop { border-radius: var(--r-md); }
+
+/* The actual preview content */
+.lp-root {
+  font-family: 'DM Sans', sans-serif;
+  transition: background .3s, color .3s;
+  min-height: 200px;
+}
+
+.lp-page {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 16px 20px;
+}
+
+.lp-shell { width: 100%; max-width: 300px; }
+
+/* default */
+.lp-default { background: #090911; color: #f0f0f0; }
+.lp-default .lp-avatar { width: 52px; height: 52px; border-radius: 50%; background: linear-gradient(135deg,#2563eb,#ff4d00); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; margin: 0 auto 10px; box-shadow: 0 0 20px rgba(255,77,0,.25); }
+.lp-default .lp-name { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 3px; }
+.lp-default .lp-handle { font-size: 11px; text-align: center; margin-bottom: 10px; }
+.lp-default .lp-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.09); margin-bottom: 8px; font-size: 12px; font-weight: 600; }
+.lp-default .lp-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* clay */
+.lp-clay .lp-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,#c026d3,#ff4d00); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 800; color: #fff; margin: 0 auto 10px; box-shadow: 4px 4px 0 rgba(0,0,0,.35); }
+.lp-clay .lp-name { font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 3px; }
+.lp-clay .lp-handle { font-size: 11px; text-align: center; margin-bottom: 12px; }
+.lp-clay .lp-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 16px; margin-bottom: 8px; font-size: 12px; font-weight: 700; box-shadow: 3px 3px 0 rgba(0,0,0,.2); border: 2px solid rgba(255,255,255,.1); }
+.lp-clay .lp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* minimal */
+.lp-minimal .lp-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; margin: 0 0 12px; }
+.lp-minimal .lp-page { align-items: flex-start; }
+.lp-minimal .lp-name { font-size: 16px; font-weight: 600; margin-bottom: 3px; }
+.lp-minimal .lp-handle { font-size: 11px; margin-bottom: 12px; }
+.lp-minimal .lp-link { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(0,0,0,.1); margin-bottom: 0; font-size: 12px; font-weight: 500; }
+.lp-minimal .lp-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* brutalist */
+.lp-brutalist .lp-avatar { width: 48px; height: 48px; border-radius: 0; border: 2px solid #111; box-shadow: 3px 3px 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; margin: 0 auto 10px; }
+.lp-brutalist .lp-name { font-size: 16px; font-weight: 900; text-align: center; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+.lp-brutalist .lp-handle { font-size: 11px; text-align: center; margin-bottom: 12px; font-weight: 700; }
+.lp-brutalist .lp-link { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 2px solid #111; margin-bottom: 8px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+.lp-brutalist .lp-dot { width: 8px; height: 8px; border-radius: 0; flex-shrink: 0; }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="theme-page container">
+
+  <!-- Page heading -->
+  <div class="fade" style="margin-bottom:0;">
+    <p class="page-eyebrow">Appearance</p>
+    <h1 style="font-size:clamp(20px,4vw,30px);font-weight:700;letter-spacing:-.4px;">
+      Customise your page
+    </h1>
+  </div>
+
+  <form method="POST" enctype="multipart/form-data" id="theme-form" novalidate>
+    {% csrf_token %}
+
+    <div class="theme-grid">
+
+      <!-- ── Left: editor ── -->
+      <div>
+        <div class="glass fade delay-1">
+
+          <!-- TEMPLATE PICKER -->
+          <p class="template-section-title">
+            Template style
+            {% if not can_themes %}
+              <span style="margin-left:8px;font-size:10.5px;padding:1px 8px;border-radius:10px;background:rgba(217,119,6,.1);color:#fbbf24;border:1px solid rgba(217,119,6,.3);font-weight:600;">Pro feature — locked</span>
+            {% endif %}
+          </p>
+          {% if not can_themes %}
+          <div style="position:relative;pointer-events:none;opacity:.5;">
+            <div style="position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);">
+              <a href="/" style="pointer-events:all;padding:8px 18px;background:var(--orange);color:#fff;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">⚡ Upgrade to unlock themes</a>
+            </div>
+          {% endif %}
+          <div class="template-grid">
+
+            <!-- Default -->
+            <label>
+              <input type="radio" name="theme" value="default" class="template-radio"
+                     {% if form.instance.theme == 'default' or not form.instance.theme %}checked{% endif %}>
+              <div class="template-card">
+                <div class="tp-preview tp-default">
+                  <div class="tp-avatar">A</div>
+                  <div class="tp-name">Alex Rivera</div>
+                  <div class="tp-link"></div>
+                  <div class="tp-link"></div>
+                </div>
+                <div class="tp-label">
+                  <span class="tp-label-name">Default</span>
+                  <span class="tp-label-badge tp-badge-popular">Popular</span>
+                </div>
+              </div>
+            </label>
+
+            <!-- Clay -->
+            <label>
+              <input type="radio" name="theme" value="clay" class="template-radio"
+                     {% if form.instance.theme == 'clay' %}checked{% endif %}>
+              <div class="template-card">
+                <div class="tp-preview tp-clay">
+                  <div class="tp-avatar">A</div>
+                  <div class="tp-name">Alex Rivera</div>
+                  <div class="tp-link"></div>
+                  <div class="tp-link"></div>
+                </div>
+                <div class="tp-label">
+                  <span class="tp-label-name">Clay Morphism</span>
+                  <span class="tp-label-badge tp-badge-new">New</span>
+                </div>
+              </div>
+            </label>
+
+            <!-- Minimal -->
+            <label>
+              <input type="radio" name="theme" value="minimal" class="template-radio"
+                     {% if form.instance.theme == 'minimal' %}checked{% endif %}>
+              <div class="template-card">
+                <div class="tp-preview tp-minimal" style="background:#fafaf9;">
+                  <div class="tp-avatar" style="background:#111;">A</div>
+                  <div class="tp-name" style="color:#111;">Alex Rivera</div>
+                  <div class="tp-link" style="width:90%;"></div>
+                  <div class="tp-link" style="width:90%;"></div>
+                </div>
+                <div class="tp-label">
+                  <span class="tp-label-name">Minimalism</span>
+                </div>
+              </div>
+            </label>
+
+            <!-- Brutalist -->
+            <label>
+              <input type="radio" name="theme" value="brutalist" class="template-radio"
+                     {% if form.instance.theme == 'brutalist' %}checked{% endif %}>
+              <div class="template-card">
+                <div class="tp-preview tp-brutalist">
+                  <div class="tp-avatar">A</div>
+                  <div class="tp-name">Alex Rivera</div>
+                  <div class="tp-link"></div>
+                  <div class="tp-link"></div>
+                </div>
+                <div class="tp-label">
+                  <span class="tp-label-name">Neo Brutalism</span>
+                </div>
+              </div>
+            </label>
+
+          </div>
+          {% if not can_themes %}</div>{% endif %}
+
+          <!-- COLOUR PICKERS -->
+          <p class="color-section-title">
+            Colours
+            {% if not can_colors %}
+              <span style="margin-left:8px;font-size:10.5px;padding:1px 8px;border-radius:10px;background:rgba(217,119,6,.1);color:#fbbf24;border:1px solid rgba(217,119,6,.3);font-weight:600;">Pro feature — locked</span>
+            {% endif %}
+          </p>
+          {% if not can_colors %}
+          <div style="position:relative;pointer-events:none;opacity:.5;">
+            <div style="position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;border-radius:12px;background:rgba(0,0,0,.35);backdrop-filter:blur(2px);">
+              <a href="/" style="pointer-events:all;padding:8px 18px;background:var(--orange);color:#fff;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">⚡ Upgrade to customise colours</a>
+            </div>
+          {% endif %}
+          <div class="color-row">
+
+            <!-- Primary / Accent -->
+            <div class="color-field">
+              <span class="color-field-label">Accent colour</span>
+              <div class="color-swatch-row">
+                <div class="color-input-wrap" title="Pick accent colour">
+                  <input type="color" name="color_primary" id="id_color_primary"
+                         value="{{ form.instance.color_primary|default:'#ff4d00' }}">
+                </div>
+                <input type="text" class="color-hex-input" id="hex_primary"
+                       maxlength="7" value="{{ form.instance.color_primary|default:'#ff4d00' }}"
+                       aria-label="Accent colour hex value">
+              </div>
+              <div class="color-presets" id="presets_primary"
+                   data-target="id_color_primary" data-hex="hex_primary">
+                <span class="color-preset" style="background:#ff4d00;" data-color="#ff4d00" title="Orange"></span>
+                <span class="color-preset" style="background:#2563eb;" data-color="#2563eb" title="Blue"></span>
+                <span class="color-preset" style="background:#c026d3;" data-color="#c026d3" title="Purple"></span>
+                <span class="color-preset" style="background:#16a34a;" data-color="#16a34a" title="Green"></span>
+                <span class="color-preset" style="background:#dc2626;" data-color="#dc2626" title="Red"></span>
+                <span class="color-preset" style="background:#f59e0b;" data-color="#f59e0b" title="Amber"></span>
+                <span class="color-preset" style="background:#0891b2;" data-color="#0891b2" title="Cyan"></span>
+                <span class="color-preset" style="background:#ec4899;" data-color="#ec4899" title="Pink"></span>
+              </div>
+            </div>
+
+            <!-- Background -->
+            <div class="color-field">
+              <span class="color-field-label">Background colour</span>
+              <div class="color-swatch-row">
+                <div class="color-input-wrap" title="Pick background colour">
+                  <input type="color" name="color_bg" id="id_color_bg"
+                         value="{{ form.instance.color_bg|default:'#050505' }}">
+                </div>
+                <input type="text" class="color-hex-input" id="hex_bg"
+                       maxlength="7" value="{{ form.instance.color_bg|default:'#050505' }}"
+                       aria-label="Background colour hex value">
+              </div>
+              <div class="color-presets" data-target="id_color_bg" data-hex="hex_bg">
+                <span class="color-preset" style="background:#050505;" data-color="#050505" title="Near black"></span>
+                <span class="color-preset" style="background:#0f172a;" data-color="#0f172a" title="Navy dark"></span>
+                <span class="color-preset" style="background:#1a0a2e;" data-color="#1a0a2e" title="Deep purple"></span>
+                <span class="color-preset" style="background:#0a1628;" data-color="#0a1628" title="Dark blue"></span>
+                <span class="color-preset" style="background:#fafaf9;" data-color="#fafaf9" title="Off-white"></span>
+                <span class="color-preset" style="background:#ffffff;" data-color="#ffffff" title="White"></span>
+                <span class="color-preset" style="background:#f3f4f6;" data-color="#f3f4f6" title="Light grey"></span>
+                <span class="color-preset" style="background:#1c1917;" data-color="#1c1917" title="Warm dark"></span>
+              </div>
+            </div>
+
+            <!-- Text -->
+            <div class="color-field">
+              <span class="color-field-label">Text colour</span>
+              <div class="color-swatch-row">
+                <div class="color-input-wrap" title="Pick text colour">
+                  <input type="color" name="color_text" id="id_color_text"
+                         value="{{ form.instance.color_text|default:'#f0f0f0' }}">
+                </div>
+                <input type="text" class="color-hex-input" id="hex_text"
+                       maxlength="7" value="{{ form.instance.color_text|default:'#f0f0f0' }}"
+                       aria-label="Text colour hex value">
+              </div>
+              <div class="color-presets" data-target="id_color_text" data-hex="hex_text">
+                <span class="color-preset" style="background:#f0f0f0;" data-color="#f0f0f0" title="Near white"></span>
+                <span class="color-preset" style="background:#ffffff;" data-color="#ffffff" title="White"></span>
+                <span class="color-preset" style="background:#111111;" data-color="#111111" title="Near black"></span>
+                <span class="color-preset" style="background:#374151;" data-color="#374151" title="Dark grey"></span>
+                <span class="color-preset" style="background:#1e293b;" data-color="#1e293b" title="Slate dark"></span>
+                <span class="color-preset" style="background:#fef3c7;" data-color="#fef3c7" title="Cream"></span>
+                <span class="color-preset" style="background:#e2e8f0;" data-color="#e2e8f0" title="Silver"></span>
+                <span class="color-preset" style="background:#d1fae5;" data-color="#d1fae5" title="Mint"></span>
+              </div>
+            </div>
+
+          </div>
+          {% if not can_colors %}</div>{% endif %}
+
+          <!-- BG IMAGE UPLOAD -->
+          {% if not can_bg %}
+          <div style="margin-bottom:28px;">
+            <span style="display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);margin-bottom:10px;">
+              Background image
+              <span style="margin-left:8px;font-size:10.5px;padding:1px 8px;border-radius:10px;background:rgba(217,119,6,.1);color:#fbbf24;border:1px solid rgba(217,119,6,.3);font-weight:600;">Pro feature — locked</span>
+            </span>
+            <div style="padding:20px;border-radius:12px;border:1px dashed rgba(217,119,6,.3);background:rgba(217,119,6,.05);text-align:center;">
+              <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Background images require a Pro plan or higher.</p>
+              <a href="/" style="display:inline-block;padding:7px 18px;background:var(--orange);color:#fff;border-radius:20px;font-size:13px;font-weight:600;text-decoration:none;">⚡ Upgrade plan</a>
+            </div>
+          </div>
+          {% else %}
+          <div class="bg-upload-section">
+            <span class="bg-upload-label">Background image (optional)</span>
+            <div class="bg-upload-row">
+              <div class="bg-preview-thumb" id="bg-thumb">
+                {% if form.instance.bg_image %}
+                  <img src="{{ form.instance.bg_image.url }}" id="bg-thumb-img" alt="Background preview">
+                {% else %}
+                  <svg id="bg-thumb-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                {% endif %}
+              </div>
+              <div class="bg-upload-info">
+                <p>JPG, PNG or WebP · Max 5 MB<br>Displayed as a full-page background on your public profile.</p>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                  <label class="bg-upload-btn" for="id_bg_image">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Upload image
+                  </label>
+                  {% if form.instance.bg_image %}
+                  <button type="button" class="bg-clear-btn" id="bg-clear-btn">
+                    <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" fill="none" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    Remove
+                  </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+            {{ form.bg_image }}
+            <!-- Hidden flag to clear bg image -->
+            <input type="hidden" name="clear_bg_image" id="clear_bg_image" value="">
+          </div>
+          {% endif %}
+
+          <!-- Form footer -->
+          <div class="form-footer">
+            <p class="form-footer-note">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Changes apply to your public page immediately.
+            </p>
+            <div class="form-footer-actions">
+              <a class="btn btn-ghost" href="/dashboard/">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save theme
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── Right: live preview ── -->
+      <div>
+        <div class="preview-sticky">
+          <div class="glass fade delay-2">
+
+            <div class="preview-label">
+              Live preview
+              <div class="preview-device-toggle">
+                <button type="button" class="preview-device-btn active" id="btn-phone" aria-label="Phone view">
+                  <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Preview frame -->
+            <div class="preview-frame-wrap preview-frame-phone" id="preview-frame">
+              <div class="lp-root" id="lp-root">
+                <div class="lp-page" id="lp-page">
+                  <div class="lp-shell" id="lp-shell">
+                    <div id="lp-avatar" class="lp-avatar">{{ request.user.username|first|upper }}</div>
+                    <div id="lp-name" class="lp-name">{{ request.user.name|default:request.user.username }}</div>
+                    <div id="lp-handle" class="lp-handle">/@{{ request.user.username }}</div>
+                    <div class="lp-link" id="lp-link1">
+                      <span class="lp-dot" id="lp-dot1"></span>
+                      Portfolio
+                    </div>
+                    <div class="lp-link" id="lp-link2">
+                      <span class="lp-dot" id="lp-dot2"></span>
+                      Latest project
+                    </div>
+                    <div class="lp-link" id="lp-link3">
+                      <span class="lp-dot" id="lp-dot3"></span>
+                      Social media
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </form>
+
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function () {
+  'use strict';
+
+  /* ── Helpers ── */
+  const $ = id => document.getElementById(id);
+
+  /* ── State ── */
+  let state = {
+    theme:   '{{ form.instance.theme|default:"default" }}',
+    primary: '{{ form.instance.color_primary|default:"#ff4d00" }}',
+    bg:      '{{ form.instance.color_bg|default:"#050505" }}',
+    text:    '{{ form.instance.color_text|default:"#f0f0f0" }}',
+  };
+
+  /* ── Live preview renderer ── */
+  function renderPreview() {
+    const root = $('lp-root');
+    const page = $('lp-page');
+    const avatar = $('lp-avatar');
+    const name   = $('lp-name');
+    const handle = $('lp-handle');
+    const links  = [$('lp-link1'), $('lp-link2'), $('lp-link3')];
+    const dots   = [$('lp-dot1'), $('lp-dot2'), $('lp-dot3')];
+
+    if (!root) return;
+
+    const T = state.theme;
+    const P = state.primary;
+    const BG = state.bg;
+    const TX = state.text;
+
+    /* Reset classes */
+    root.className = 'lp-root lp-' + T;
+    root.style.background = BG;
+    root.style.color = TX;
+    page.className = 'lp-page';
+    avatar.className = 'lp-avatar';
+    name.className = 'lp-name';
+    handle.className = 'lp-handle';
+
+    links.forEach(l => { l.className = 'lp-link'; });
+    dots.forEach(d => { d.className = 'lp-dot'; });
+
+    /* Per-theme styles */
+    if (T === 'default') {
+      root.style.background = BG;
+      avatar.style.cssText = `background:linear-gradient(135deg,${P},#2563eb);`;
+      handle.style.color = P;
+      links.forEach(l => { l.style.cssText = `background:color-mix(in srgb,${TX} 6%,transparent);border:1px solid color-mix(in srgb,${TX} 10%,transparent);`; });
+      dots.forEach(d => { d.style.background = P; });
+
+    } else if (T === 'clay') {
+      root.style.background = BG;
+      avatar.style.cssText = `background:linear-gradient(135deg,#c026d3,${P});box-shadow:4px 4px 0 rgba(0,0,0,.35);`;
+      handle.style.color = P;
+      links.forEach(l => { l.style.cssText = `background:color-mix(in srgb,${BG} 85%,white);border:2px solid color-mix(in srgb,${TX} 8%,transparent);box-shadow:3px 3px 0 rgba(0,0,0,.2);border-radius:16px;`; });
+      dots.forEach(d => { d.style.background = P; });
+
+    } else if (T === 'minimal') {
+      root.style.background = BG;
+      page.style.alignItems = 'flex-start';
+      page.style.padding = '20px 20px';
+      avatar.style.cssText = `background:${P};border-radius:50%;`;
+      handle.style.color = `color-mix(in srgb,${TX} 50%,transparent)`;
+      links.forEach(l => { l.style.cssText = `border-bottom:1px solid color-mix(in srgb,${TX} 12%,transparent);border-radius:0;background:transparent;padding:12px 0;`; });
+      dots.forEach(d => { d.style.cssText = `background:${P};border-radius:50%;`; });
+
+    } else if (T === 'brutalist') {
+      root.style.background = BG;
+      avatar.style.cssText = `background:${P};border-radius:0;border:2px solid ${TX};box-shadow:3px 3px 0 ${TX};`;
+      name.style.cssText = `text-transform:uppercase;text-shadow:2px 2px 0 ${P};`;
+      handle.style.color = P;
+      links.forEach(l => { l.style.cssText = `background:${BG};border:2px solid ${TX};border-radius:0;text-transform:uppercase;font-weight:800;letter-spacing:.04em;margin-bottom:8px;`; });
+      dots.forEach(d => { d.style.cssText = `background:${P};border-radius:0;`; });
+    }
+  }
+
+  /* Run once on load */
+  renderPreview();
+
+  /* ── Theme radio buttons ── */
+  document.querySelectorAll('.template-radio').forEach(radio => {
+    radio.addEventListener('change', () => {
+      state.theme = radio.value;
+      renderPreview();
+    });
+  });
+
+  /* ── Colour pickers: sync color input ↔ hex text ↔ preview ── */
+  function setupColorPair(colorInputId, hexInputId, stateKey) {
+    const colorInput = $(colorInputId);
+    const hexInput   = $(hexInputId);
+    if (!colorInput || !hexInput) return;
+
+    function updateFromColor(val) {
+      state[stateKey] = val;
+      hexInput.value  = val.toUpperCase();
+      renderPreview();
+    }
+
+    function updateFromHex(val) {
+      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+        state[stateKey]   = val;
+        colorInput.value  = val;
+        renderPreview();
+      }
+    }
+
+    colorInput.addEventListener('input', () => updateFromColor(colorInput.value));
+    colorInput.addEventListener('change', () => updateFromColor(colorInput.value));
+    hexInput.addEventListener('input', () => updateFromHex(hexInput.value));
+    hexInput.addEventListener('change', () => updateFromHex(hexInput.value));
+  }
+
+  setupColorPair('id_color_primary', 'hex_primary', 'primary');
+  setupColorPair('id_color_bg',      'hex_bg',      'bg');
+  setupColorPair('id_color_text',    'hex_text',    'text');
+
+  /* ── Preset swatches ── */
+  document.querySelectorAll('.color-presets').forEach(group => {
+    const targetId = group.dataset.target;
+    const hexId    = group.dataset.hex;
+    const colorInp = $(targetId);
+    const hexInp   = $(hexId);
+
+    const stateKeyMap = {
+      'id_color_primary': 'primary',
+      'id_color_bg':      'bg',
+      'id_color_text':    'text',
+    };
+    const sKey = stateKeyMap[targetId];
+
+    group.querySelectorAll('.color-preset').forEach(swatch => {
+      swatch.addEventListener('click', () => {
+        const c = swatch.dataset.color;
+        if (colorInp) colorInp.value = c;
+        if (hexInp)   hexInp.value   = c.toUpperCase();
+        if (sKey) { state[sKey] = c; renderPreview(); }
+      });
+    });
+  });
+
+  /* ── Background image preview ── */
+  const bgInput   = $('id_bg_image');
+  const bgThumb   = $('bg-thumb');
+  const bgClearBtn = $('bg-clear-btn');
+
+  if (bgInput) {
+    bgInput.addEventListener('change', function () {
+      const file = this.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      const url = URL.createObjectURL(file);
+
+      const icon = bgThumb.querySelector('#bg-thumb-icon');
+      const img  = bgThumb.querySelector('#bg-thumb-img');
+
+      if (img) {
+        img.src = url;
+      } else {
+        const newImg = document.createElement('img');
+        newImg.id = 'bg-thumb-img'; newImg.alt = '';
+        newImg.src = url; newImg.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+        if (icon) icon.remove();
+        bgThumb.appendChild(newImg);
+      }
+    });
+  }
+
+  if (bgClearBtn) {
+    bgClearBtn.addEventListener('click', function () {
+      $('clear_bg_image').value = '1';
+      const img = bgThumb.querySelector('#bg-thumb-img');
+      if (img) {
+        img.remove();
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.id = 'bg-thumb-icon'; svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('width', '22'); svg.setAttribute('height', '22');
+        svg.innerHTML = '<rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/><circle cx="8.5" cy="8.5" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/><polyline points="21 15 16 10 5 21" stroke="currentColor" stroke-width="1.5" fill="none"/>';
+        bgThumb.appendChild(svg);
+      }
+      this.style.display = 'none';
+    });
+  }
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Profile — AEiViON{% endblock %}
+
+{% block menu_profile %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+
+/* ============================================================
+   EDIT PROFILE PAGE
+   ============================================================ */
+
+.edit-page {
+  padding-block: clamp(28px, 5vw, 48px);
+}
+
+/* ── Two-column layout: form left, preview right ── */
+.edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: clamp(14px, 2.5vw, 22px);
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .edit-grid { grid-template-columns: 1fr; }
+  /* Preview moves above form on mobile */
+  .edit-preview-col { order: -1; }
+}
+
+/* ── Page heading ── */
+.edit-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.edit-eyebrow::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 8px rgba(255,77,0,.6);
+  flex-shrink: 0;
+}
+
+/* ── Section dividers inside the form card ── */
+.form-section {
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-section:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+  margin-bottom: 16px;
+}
+
+/* ── Field row ── */
+.field {
+  margin-bottom: 14px;
+}
+
+.field:last-child { margin-bottom: 0; }
+
+.field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,.65);
+  margin-bottom: 7px;
+}
+
+.field label svg {
+  width: 13px; height: 13px;
+  stroke: var(--muted); fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+/* Override base input to remove margin (field wrapper manages spacing) */
+.field input,
+.field textarea,
+.field select {
+  margin-bottom: 0;
+}
+
+/* Input with prefix (e.g. github.com/) */
+.input-with-prefix {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.input-with-prefix:focus-within {
+  border-color: rgba(255,77,0,.4);
+  box-shadow: 0 0 0 3px rgba(255,77,0,.08);
+}
+
+.input-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  background: rgba(255,255,255,.035);
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.input-with-prefix input {
+  flex: 1;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent;
+  min-width: 0;
+}
+
+/* ── Avatar upload ── */
+.avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.avatar-preview {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--orange));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  position: relative;
+}
+
+.avatar-preview img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+/* Overlay on hover */
+.avatar-preview-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity .2s;
+}
+
+.avatar-preview-overlay svg {
+  width: 18px; height: 18px;
+  stroke: #fff; fill: none; stroke-width: 2;
+}
+
+@media (hover: hover) {
+  .avatar-preview:hover .avatar-preview-overlay { opacity: 1; }
+}
+
+.avatar-upload-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-upload-info p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+/* Hide native file input, replace with styled button */
+.avatar-file-input {
+  display: none;
+}
+
+.avatar-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  min-height: 34px;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: rgba(255,255,255,.8);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s, border-color .2s;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.avatar-upload-btn svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+}
+
+@media (hover: hover) {
+  .avatar-upload-btn:hover {
+    background: var(--surface-hi);
+    border-color: var(--border-hi);
+  }
+}
+
+/* ── Form footer ── */
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.form-footer-note {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.form-footer-note svg {
+  width: 12px; height: 12px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+  flex-shrink: 0;
+}
+
+.form-footer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ── Live preview card (right column) ── */
+.preview-sticky {
+  position: sticky;
+  top: calc(var(--nav-h) + 16px);
+}
+
+.preview-card {}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.25);
+  margin-bottom: 14px;
+}
+
+.preview-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.preview-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--blue), var(--orange));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  border: 2px solid rgba(255,255,255,.1);
+  flex-shrink: 0;
+}
+
+.preview-avatar img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+
+.preview-name {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -.2px;
+  color: #fff;
+  min-height: 1.2em;
+}
+
+.preview-handle {
+  font-size: 12px;
+  color: rgba(255,100,30,.8);
+  font-weight: 500;
+}
+
+.preview-bio {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 260px;
+  min-height: 1.55em;
+}
+
+.preview-divider {
+  width: 40px;
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 4px 0;
+}
+
+/* Social pills in preview */
+.preview-socials {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.preview-social-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.preview-social-pill svg {
+  width: 11px; height: 11px;
+  stroke: currentColor; fill: none; stroke-width: 2;
+}
+
+</style>
+{% endblock %}
+
+
+{% block content %}
+
+<div class="edit-page container">
+
+  <!-- Page heading -->
+  <div class="fade" style="margin-bottom:clamp(20px,3vw,32px);">
+    <p class="edit-eyebrow">Account</p>
+    <h1 style="font-size:clamp(20px,4vw,30px);font-weight:700;letter-spacing:-.4px;">
+      Edit Profile
+    </h1>
+  </div>
+
+  <div class="edit-grid">
+
+    <!-- ── Form column ── -->
+    <div>
+      <div class="glass fade delay-1">
+
+        <form method="POST" enctype="multipart/form-data" id="edit-form" novalidate>
+          {% csrf_token %}
+
+          <!-- IDENTITY -->
+          <div class="form-section">
+            <p class="form-section-title">Identity</p>
+
+            <!-- Avatar -->
+            <div class="field" style="margin-bottom:20px;">
+              <label>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                Avatar
+              </label>
+              <div class="avatar-upload">
+                <div class="avatar-preview" id="avatar-preview">
+                  {% if form.instance.avatar %}
+                    <img src="{{ form.instance.avatar.url }}"
+                         id="avatar-img" alt="Current avatar">
+                  {% else %}
+                    <span id="avatar-initials">
+                      {{ form.instance.username|first|upper }}
+                    </span>
+                  {% endif %}
+                  <div class="avatar-preview-overlay">
+                    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                  </div>
+                </div>
+                <div class="avatar-upload-info">
+                  <p>JPG, PNG or GIF · Max 2 MB</p>
+                  <label class="avatar-upload-btn" for="id_avatar">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Choose file
+                  </label>
+                  {{ form.avatar }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Username -->
+            <div class="field">
+              <label for="{{ form.username.id_for_label }}" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                Username
+                {% if changes_unlimited %}
+                  <span style="font-size:10.5px;padding:1px 8px;border-radius:10px;background:rgba(22,163,74,.12);color:#4ade80;border:1px solid rgba(22,163,74,.3);font-weight:600;">Unlimited changes</span>
+                {% else %}
+                  <span style="font-size:10.5px;padding:1px 8px;border-radius:10px;background:var(--surface);color:var(--muted);border:1px solid var(--border);font-weight:500;">
+                    {{ changes_used }}/{{ changes_limit }} change{{ changes_limit|pluralize }} this month
+                  </span>
+                {% endif %}
+              </label>
+              <div class="input-with-prefix">
+                <span class="input-prefix">aeiviOn.app/@</span>
+                {{ form.username }}
+              </div>
+              {% if not changes_unlimited %}
+                {% if changes_used >= changes_limit and changes_limit > 0 %}
+                  <p style="margin-top:6px;font-size:12px;color:#f87171;">
+                    Monthly limit reached.
+                    <a href="/" style="color:var(--orange);text-decoration:underline;">Upgrade your plan</a> for more changes or unlimited.
+                  </p>
+                {% else %}
+                  <p style="margin-top:6px;font-size:11.5px;color:var(--muted);">
+                    {{ changes_limit }} username change{{ changes_limit|pluralize }} allowed per month on your plan.
+                  </p>
+                {% endif %}
+              {% endif %}
+            </div>
+
+            <!-- Name -->
+            <div class="field">
+              <label for="{{ form.name.id_for_label }}">
+                <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h6"/></svg>
+                Display name
+              </label>
+              {{ form.name }}
+            </div>
+
+            <!-- Bio -->
+            <div class="field">
+              <label for="{{ form.bio.id_for_label }}">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                Bio
+              </label>
+              {{ form.bio }}
+            </div>
+          </div>
+
+          <!-- SOCIAL LINKS -->
+          <div class="form-section">
+            <p class="form-section-title">Social Links</p>
+
+            <!-- GitHub -->
+            <div class="field">
+              <label for="{{ form.github.id_for_label }}">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                GitHub
+              </label>
+              <div class="input-with-prefix">
+                <span class="input-prefix">github.com/</span>
+                {{ form.github }}
+              </div>
+            </div>
+
+            <!-- Twitter -->
+            <div class="field">
+              <label for="{{ form.twitter.id_for_label }}">
+                <svg viewBox="0 0 24 24"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                Twitter / X
+              </label>
+              <div class="input-with-prefix">
+                <span class="input-prefix">x.com/</span>
+                {{ form.twitter }}
+              </div>
+            </div>
+
+            <!-- Website -->
+            <div class="field">
+              <label for="{{ form.website.id_for_label }}">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Website
+              </label>
+              {{ form.website }}
+            </div>
+          </div>
+
+          <!-- FORM FOOTER -->
+          <div class="form-footer">
+            <p class="form-footer-note">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Changes apply to your public page immediately.
+            </p>
+            <div class="form-footer-actions">
+              <a class="btn btn-ghost" href="/dashboard/">Cancel</a>
+              <button type="submit" class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save changes
+              </button>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+
+    <!-- ── Live preview column ── -->
+    <div class="edit-preview-col">
+      <div class="preview-sticky">
+        <div class="glass preview-card fade delay-2">
+
+          <p class="preview-label">Live preview</p>
+
+          <div class="preview-profile">
+
+            <div class="preview-avatar" id="preview-avatar">
+              {% if form.instance.avatar %}
+                <img src="{{ form.instance.avatar.url }}"
+                     id="preview-avatar-img" alt="">
+              {% else %}
+                <span id="preview-initials">
+                  {{ form.instance.username|first|upper }}
+                </span>
+              {% endif %}
+            </div>
+
+            <p class="preview-name" id="preview-name">
+              {{ form.instance.name|default:form.instance.username }}
+            </p>
+
+            <p class="preview-handle" id="preview-handle">
+              /@{{ form.instance.username }}
+            </p>
+
+            <hr class="preview-divider">
+
+            <p class="preview-bio" id="preview-bio">
+              {{ form.instance.bio|default:"No bio yet." }}
+            </p>
+
+            <div class="preview-socials" id="preview-socials">
+              {% if form.instance.github %}
+              <span class="preview-social-pill">
+                <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+                {{ form.instance.github }}
+              </span>
+              {% endif %}
+              {% if form.instance.twitter %}
+              <span class="preview-social-pill">
+                <svg viewBox="0 0 24 24"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>
+                {{ form.instance.twitter }}
+              </span>
+              {% endif %}
+              {% if form.instance.website %}
+              <span class="preview-social-pill">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                Website
+              </span>
+              {% endif %}
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_scripts %}
+<script>
+(function () {
+
+  /* ── Avatar preview ── */
+  var fileInput  = document.getElementById('id_avatar');
+  var avatarImg  = document.getElementById('avatar-img');
+  var initials   = document.getElementById('avatar-initials');
+  var prevImg    = document.getElementById('preview-avatar-img');
+  var prevInits  = document.getElementById('preview-initials');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      var file = this.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+      var url = URL.createObjectURL(file);
+
+      /* Main avatar swatch */
+      if (avatarImg) {
+        avatarImg.src = url;
+      } else if (initials) {
+        /* Replace initials span with an img */
+        var img = document.createElement('img');
+        img.id = 'avatar-img'; img.alt = '';
+        img.src = url;
+        initials.replaceWith(img);
+        avatarImg = img;
+      }
+
+      /* Preview avatar */
+      if (prevImg) {
+        prevImg.src = url;
+      } else if (prevInits) {
+        var pi = document.createElement('img');
+        pi.id = 'preview-avatar-img'; pi.alt = '';
+        pi.src = url;
+        prevInits.replaceWith(pi);
+      }
+    });
+  }
+
+  /* ── Live text preview ── */
+  function liveField(inputId, targetId, fallback) {
+    var input  = document.getElementById(inputId);
+    var target = document.getElementById(targetId);
+    if (!input || !target) return;
+    input.addEventListener('input', function () {
+      target.textContent = this.value.trim() || fallback;
+    });
+  }
+
+  function liveHandle(inputId, targetId) {
+    var input  = document.getElementById(inputId);
+    var target = document.getElementById(targetId);
+    if (!input || !target) return;
+    input.addEventListener('input', function () {
+      target.textContent = '/@' + (this.value.trim() || '…');
+    });
+  }
+
+  liveField('{{ form.name.id_for_label }}',     'preview-name',   'Display name');
+  liveField('{{ form.bio.id_for_label }}',      'preview-bio',    'No bio yet.');
+  liveHandle('{{ form.username.id_for_label }}','preview-handle');
+
+  /* ── Social pills live update ── */
+  function liveSocial(inputId, pillId, prefix) {
+    var input = document.getElementById(inputId);
+    var socials = document.getElementById('preview-socials');
+    if (!input || !socials) return;
+
+    input.addEventListener('input', function () {
+      var val = this.value.trim();
+      var existing = document.getElementById(pillId);
+
+      if (val) {
+        if (existing) {
+          existing.lastChild.textContent = val;
+        } else {
+          var pill = document.createElement('span');
+          pill.className = 'preview-social-pill';
+          pill.id = pillId;
+          pill.innerHTML = prefix + val;
+          socials.appendChild(pill);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
+    });
+  }
+
+  liveSocial(
+    '{{ form.github.id_for_label }}',  'pill-github',
+    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>'
+  );
+  liveSocial(
+    '{{ form.twitter.id_for_label }}', 'pill-twitter',
+    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"/></svg>'
+  );
+  liveSocial(
+    '{{ form.website.id_for_label }}', 'pill-website',
+    '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+  );
+
+})();
+</script>
+{% endblock %}

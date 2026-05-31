@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>{% block title %}Admin{% endblock %} — {{ site_settings.site_name|default:"AEiViON" }} Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens ── */
+:root {
+  --bg:     #08090d;
+  --s1:     #0f1117;
+  --s2:     #161820;
+  --s3:     #1c1e28;
+  --bd:     rgba(255,255,255,.07);
+  --bhi:    rgba(255,255,255,.13);
+  --text:   #e8eaf0;
+  --muted:  rgba(232,234,240,.45);
+  --ac:     {{ site_settings.accent_color|default:"#ff4d00" }};
+  --ac-lo:  color-mix(in srgb,var(--ac) 12%,transparent);
+  --ac-mid: color-mix(in srgb,var(--ac) 30%,transparent);
+  --blue:   #2563eb;
+  --blo:    rgba(37,99,235,.12);
+  --green:  #16a34a;
+  --glo:    rgba(22,163,74,.12);
+  --red:    #dc2626;
+  --rlo:    rgba(220,38,38,.1);
+  --yellow: #d97706;
+  --ylo:    rgba(217,119,6,.1);
+  --purple: #7c3aed;
+  --plo:    rgba(124,58,237,.1);
+  --r-xs:3px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+  --sidebar:240px;
+  --header:54px;
+  --mobile-nav:56px;
+}
+
+/* ── Reset ── */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:inherit;border:none;background:none}
+img,svg{display:block;max-width:100%}
+
+/* ── Ambient glow ── */
+body::before{content:"";position:fixed;top:-20vh;left:-10vw;width:40vmax;height:40vmax;border-radius:50%;background:radial-gradient(circle,var(--ac) 0%,transparent 65%);filter:blur(120px);opacity:.05;z-index:0;pointer-events:none}
+body::after{content:"";position:fixed;bottom:-20vh;right:-10vw;width:40vmax;height:40vmax;border-radius:50%;background:radial-gradient(circle,#1d4ed8 0%,transparent 65%);filter:blur(120px);opacity:.04;z-index:0;pointer-events:none}
+
+/* ================================================================
+   DESKTOP LAYOUT  (≥900px)
+   Sidebar fixed on left, header sticks at top of content area.
+   ================================================================ */
+@media (min-width:900px) {
+  .admin-sidebar   { position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;z-index:200;display:flex!important; }
+  .admin-topbar    { position:sticky;top:0;z-index:100;margin-left:0; }
+  .admin-main      { padding-left:var(--sidebar); }
+  .admin-mob-nav   { display:none!important; }
+  .admin-mob-overlay{ display:none!important; }
+}
+
+/* ================================================================
+   MOBILE LAYOUT   (<900px)
+   Sidebar hidden, slides in as drawer.  Bottom tab bar navigation.
+   ================================================================ */
+@media (max-width:899px) {
+  .admin-sidebar{
+    position:fixed;top:0;left:0;width:280px;height:100vh;z-index:300;
+    transform:translateX(-100%);transition:transform .28s ease;
+    display:flex!important;
+  }
+  .admin-sidebar.open{ transform:translateX(0); }
+  .admin-mob-overlay{
+    display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+    z-index:290;backdrop-filter:blur(2px);
+  }
+  .admin-mob-overlay.show{ display:block; }
+  .admin-topbar{ position:sticky;top:0;z-index:100; }
+  .admin-main{ padding-bottom:calc(var(--mobile-nav) + env(safe-area-inset-bottom,0px)); }
+  .admin-mob-nav{
+    display:flex!important;position:fixed;bottom:0;left:0;right:0;
+    height:var(--mobile-nav);padding-bottom:env(safe-area-inset-bottom,0px);
+    background:var(--s1);border-top:1px solid var(--bd);z-index:200;
+  }
+}
+
+/* ── Sidebar ── */
+.admin-sidebar{
+  background:var(--s1);border-right:1px solid var(--bd);
+  flex-direction:column;overflow-y:auto;overflow-x:hidden;
+}
+.sb-brand{
+  height:var(--header);display:flex;align-items:center;gap:10px;
+  padding:0 18px;border-bottom:1px solid var(--bd);flex-shrink:0;
+}
+.sb-logo{
+  width:30px;height:30px;border-radius:var(--r-sm);
+  background:linear-gradient(135deg,var(--ac),#2563eb);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.sb-name{font-size:14px;font-weight:700;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-badge{
+  margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:2px 7px;border-radius:10px;background:var(--ac-lo);color:var(--ac);
+  border:1px solid var(--ac-mid);white-space:nowrap;flex-shrink:0;
+}
+.sb-sec{padding:16px 10px 4px}
+.sb-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:0 8px;margin-bottom:3px}
+.sb-link{
+  display:flex;align-items:center;gap:9px;padding:8px 10px;
+  border-radius:var(--r-sm);font-size:13.5px;font-weight:500;
+  color:var(--muted);transition:background .15s,color .15s;margin-bottom:1px;
+}
+.sb-link svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sb-link:hover{background:var(--s2);color:var(--text)}
+.sb-link.active{background:var(--ac-lo);color:var(--ac)}
+.sb-link.active svg{stroke:var(--ac)}
+.sb-footer{margin-top:auto;padding:14px 10px;border-top:1px solid var(--bd)}
+.sb-user{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--r-sm);background:var(--s2);margin-bottom:6px}
+.sb-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--blue));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.sb-uname{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb-urole{font-size:10px;color:var(--muted)}
+.sb-logout{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r-sm);font-size:13px;color:var(--muted);transition:color .15s,background .15s;width:100%}
+.sb-logout svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.sb-logout:hover{background:var(--rlo);color:#f87171}
+
+/* ── Topbar ── */
+.admin-topbar{
+  background:var(--s1);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:var(--header);
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-menu-btn{
+  width:34px;height:34px;border-radius:var(--r-sm);
+  display:none;align-items:center;justify-content:center;
+  background:var(--s2);border:1px solid var(--bd);color:var(--muted);
+  transition:color .15s;cursor:pointer;flex-shrink:0;
+}
+.topbar-menu-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2}
+.topbar-menu-btn:hover{color:var(--text)}
+@media(max-width:899px){.topbar-menu-btn{display:flex}}
+.topbar-title{font-size:15px;font-weight:600;letter-spacing:-.2px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+
+/* ── Main content ── */
+.admin-main{position:relative;z-index:1;min-height:100vh}
+.admin-content{padding:22px 20px}
+@media(min-width:640px){.admin-content{padding:24px 26px}}
+
+/* ── Mobile bottom nav ── */
+.admin-mob-nav{ align-items:stretch }
+.mob-nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:6px 4px;font-size:10px;font-weight:500;color:var(--muted);
+  transition:color .15s;text-decoration:none;
+}
+.mob-nav-item svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mob-nav-item.active{color:var(--ac)}
+.mob-nav-item:active{opacity:.7}
+
+/* ================================================================
+   COMPONENTS
+   ================================================================ */
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:18px}
+@media(min-width:640px){.stat-grid{grid-template-columns:repeat(4,1fr);gap:12px}}
+.stat-card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:flex-start;gap:10px;transition:border-color .2s}
+.stat-card:hover{border-color:var(--bhi)}
+.stat-icon{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-icon svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+.si-ac{background:var(--ac-lo);color:var(--ac);border:1px solid var(--ac-mid)}
+.si-blue{background:var(--blo);color:#60a5fa;border:1px solid rgba(37,99,235,.25)}
+.si-green{background:var(--glo);color:#4ade80;border:1px solid rgba(22,163,74,.25)}
+.si-purple{background:var(--plo);color:#a78bfa;border:1px solid rgba(124,58,237,.25)}
+.stat-body{flex:1;min-width:0}
+.stat-label{font-size:10.5px;color:var(--muted);font-weight:500;margin-bottom:3px}
+.stat-value{font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1}
+.stat-sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+@media(min-width:640px){.stat-value{font-size:24px}}
+
+/* Panel */
+.panel{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r-lg);margin-bottom:16px;overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--bd);gap:10px;flex-wrap:wrap}
+.panel-title{font-size:13.5px;font-weight:600}
+.panel-body{padding:16px 18px}
+@media(min-width:640px){.panel-header{padding:14px 20px}.panel-body{padding:20px}}
+
+/* Table — scrollable on mobile */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.data-table{width:100%;border-collapse:collapse;font-size:13px;min-width:480px}
+.data-table th{text-align:left;padding:8px 12px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--bd);white-space:nowrap}
+.data-table td{padding:10px 12px;border-bottom:1px solid var(--bd);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.018)}
+.mono{font-family:monospace;font-size:11.5px;color:var(--muted)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;letter-spacing:.04em;white-space:nowrap}
+.b-free{background:var(--s2);color:var(--muted);border:1px solid var(--bd)}
+.b-pro{background:var(--ac-lo);color:var(--ac);border:1px solid var(--ac-mid)}
+.b-enterprise{background:var(--plo);color:#a78bfa;border:1px solid rgba(124,58,237,.3)}
+.b-active{background:var(--glo);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+.b-inactive{background:var(--rlo);color:#f87171;border:1px solid rgba(220,38,38,.25)}
+.b-staff{background:var(--blo);color:#60a5fa;border:1px solid rgba(37,99,235,.25)}
+.b-featured{background:var(--ylo);color:#fbbf24;border:1px solid rgba(217,119,6,.3)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px 16px;min-height:36px;border-radius:var(--r-xl);font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:inherit;text-decoration:none;white-space:nowrap;transition:transform .15s,box-shadow .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.97)}
+@media(hover:hover){.btn:hover{transform:translateY(-1px)}}
+.btn-primary{background:var(--ac);color:#fff;box-shadow:0 0 16px color-mix(in srgb,var(--ac) 30%,transparent)}
+@media(hover:hover){.btn-primary:hover{box-shadow:0 0 28px color-mix(in srgb,var(--ac) 50%,transparent)}}
+.btn-ghost{background:var(--s2);color:var(--text);border:1px solid var(--bd)}
+@media(hover:hover){.btn-ghost:hover{border-color:var(--bhi)}}
+.btn-danger{background:var(--rlo);color:#f87171;border:1px solid rgba(220,38,38,.25)}
+.btn-success{background:var(--glo);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+.btn-warning{background:var(--ylo);color:#fbbf24;border:1px solid rgba(217,119,6,.3)}
+.btn-sm{padding:5px 12px;min-height:28px;font-size:12px;border-radius:var(--r-lg)}
+.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;flex-shrink:0}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:600px){.form-grid{grid-template-columns:1fr 1fr;gap:14px}}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field-label,.field label{display:block;font-size:12px;font-weight:500;color:rgba(232,234,240,.62);margin-bottom:5px}
+.admin-input,.field input,.field textarea,.field select{
+  width:100%;padding:9px 12px;background:var(--s2);border:1px solid var(--bd);
+  border-radius:var(--r-sm);color:var(--text);font-family:'DM Sans',sans-serif;
+  font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;
+  appearance:none;min-height:42px;margin-bottom:0;
+}
+.admin-input:focus,.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:color-mix(in srgb,var(--ac) 60%,transparent);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 10%,transparent);
+}
+.field input[type="color"]{height:42px;padding:3px 6px;cursor:pointer;min-height:unset}
+.field input[type="checkbox"]{width:17px;height:17px;min-height:unset;flex-shrink:0;accent-color:var(--ac);cursor:pointer}
+.field textarea{resize:vertical;min-height:80px}
+.field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.4)' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:34px;
+}
+.field-check{display:flex;align-items:center;gap:9px;cursor:pointer}
+.field-check span{font-size:13px;font-weight:500}
+.field-hint{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+
+/* Alerts */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:11px 14px;border-radius:var(--r-sm);font-size:13px;margin-bottom:14px;border:1px solid transparent;line-height:1.5}
+.alert svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;margin-top:1px}
+.alert-success{background:var(--glo);color:#4ade80;border-color:rgba(22,163,74,.3)}
+.alert-error{background:var(--rlo);color:#f87171;border-color:rgba(220,38,38,.25)}
+.alert-info{background:var(--blo);color:#60a5fa;border-color:rgba(37,99,235,.25)}
+.alert-warning{background:var(--ylo);color:#fbbf24;border-color:rgba(217,119,6,.25)}
+
+/* Search */
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--muted);fill:none;stroke-width:2;pointer-events:none}
+.search-input{padding-left:32px!important;min-height:36px!important;font-size:13px!important}
+
+/* User row */
+.user-row{display:flex;align-items:center;gap:9px}
+.u-avatar{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--ac),var(--blue));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0}
+.u-name{font-size:13px;font-weight:600}
+.u-email{font-size:11px;color:var(--muted)}
+
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:6px;margin-bottom:16px;font-size:12.5px;color:var(--muted);flex-wrap:wrap}
+.breadcrumb a{color:var(--muted);transition:color .15s}
+.breadcrumb a:hover{color:var(--text)}
+.breadcrumb svg{width:11px;height:11px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+
+/* Two-column responsive grid */
+.two-col{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+@media(min-width:700px){.two-col{grid-template-columns:1fr 1fr}}
+
+/* Save bar */
+.save-bar{display:flex;gap:10px;padding-top:14px;border-top:1px solid var(--bd);margin-top:16px;flex-wrap:wrap}
+
+/* Utility */
+.text-muted{color:var(--muted)}
+.text-ac{color:var(--ac)}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+<!-- ── Overlay for mobile drawer ── -->
+<div class="admin-mob-overlay" id="mob-overlay" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════════════════════ -->
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">{{ site_settings.site_name|default:"A"|first|upper }}</div>
+    <span class="sb-name">{{ site_settings.site_name|default:"AEiViON" }}</span>
+    <span class="sb-badge">Admin</span>
+  </div>
+
+  <div class="sb-sec">
+    <p class="sb-label">Overview</p>
+    <a href="{% url 'admin_dashboard' %}" class="sb-link {% block nav_dash %}{% endblock %}" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </a>
+  </div>
+
+  <div class="sb-sec">
+    <p class="sb-label">Management</p>
+    <a href="{% url 'admin_user_list' %}" class="sb-link {% block nav_users %}{% endblock %}" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Users
+    </a>
+    <a href="{% url 'admin_plan_list' %}" class="sb-link {% block nav_plans %}{% endblock %}" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+      Subscription Plans
+    </a>
+    <a href="{% url 'admin_feature_list' %}" class="sb-link {% block nav_features %}{% endblock %}" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Features
+    </a>
+  </div>
+
+  <div class="sb-sec">
+    <p class="sb-label">Configuration</p>
+    <a href="{% url 'admin_site_settings' %}" class="sb-link {% block nav_settings %}{% endblock %}" onclick="closeSidebar()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Site Settings
+    </a>
+  </div>
+
+  <div class="sb-sec">
+    <p class="sb-label">Quick Links</p>
+    <a href="/" class="sb-link" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      View Site
+    </a>
+    <a href="/admin/" class="sb-link">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Django Admin
+    </a>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar">{{ request.user.username|first|upper }}</div>
+      <div style="min-width:0;">
+        <p class="sb-uname">{{ request.user.username }}</p>
+        <p class="sb-urole">Administrator</p>
+      </div>
+    </div>
+    <a href="/logout/" class="sb-logout">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign out
+    </a>
+  </div>
+</aside>
+
+<!-- ══════════════════════════════════════════════════════════
+     TOPBAR
+══════════════════════════════════════════════════════════ -->
+<header class="admin-topbar">
+  <div class="topbar-left">
+    <button class="topbar-menu-btn" onclick="openSidebar()" aria-label="Open menu">
+      <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <h1 style="font-size:15px;font-weight:600;letter-spacing:-.2px;">{% block page_title %}Admin{% endblock %}</h1>
+  </div>
+  <div class="topbar-right">
+    <span class="badge b-staff" style="font-size:10.5px;padding:3px 8px;">Staff</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN
+══════════════════════════════════════════════════════════ -->
+<div class="admin-main">
+  <div class="admin-content">
+
+    {% if messages %}
+      {% for message in messages %}
+      <div class="alert alert-{% if message.tags %}{{ message.tags }}{% else %}info{% endif %}">
+        <svg viewBox="0 0 24 24">
+          {% if message.tags == 'success' %}<polyline points="20 6 9 17 4 12"/>
+          {% elif message.tags == 'error' %}<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          {% else %}<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>{% endif %}
+        </svg>
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MOBILE BOTTOM NAV
+══════════════════════════════════════════════════════════ -->
+<nav class="admin-mob-nav" aria-label="Mobile navigation">
+  <a href="{% url 'admin_dashboard' %}" class="mob-nav-item {% block mnav_dash %}{% endblock %}">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </a>
+  <a href="{% url 'admin_user_list' %}" class="mob-nav-item {% block mnav_users %}{% endblock %}">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+    Users
+  </a>
+  <a href="{% url 'admin_plan_list' %}" class="mob-nav-item {% block mnav_plans %}{% endblock %}">
+    <svg viewBox="0 0 24 24"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/></svg>
+    Plans
+  </a>
+  <a href="{% url 'admin_site_settings' %}" class="mob-nav-item {% block mnav_settings %}{% endblock %}">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </a>
+</nav>
+
+<script>
+function openSidebar(){
+  document.getElementById('admin-sidebar').classList.add('open');
+  document.getElementById('mob-overlay').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  document.getElementById('admin-sidebar').classList.remove('open');
+  document.getElementById('mob-overlay').classList.remove('show');
+  document.body.style.overflow='';
+}
+</script>
+</body>
+</html>
