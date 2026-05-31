@@ -42,7 +42,7 @@ DEBUG = os.environ.get('DEBUG', 'False').strip().lower() in ('true', '1', 'yes')
 if DEBUG:
     ALLOWED_HOSTS = ['*']
 else:
-    _raw = os.environ.get('ALLOWED_HOSTS', '127.0.0.1,localhost')
+    _raw = os.environ.get('ALLOWED_HOSTS', 'getbio.cybflows.com,localhost')
     ALLOWED_HOSTS = [h.strip() for h in _raw.split(',') if h.strip()]
 
 # ── Application definition ────────────────────────────────────────────────────
