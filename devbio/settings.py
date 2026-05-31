@@ -75,6 +75,9 @@ MIDDLEWARE = [
     # so that request.user is available for the is_staff bypass check.
     'devbio.middleware.MaintenanceMiddleware',
 ]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.cybflows.com",
+]
 
 ROOT_URLCONF = 'devbio.urls'
 
